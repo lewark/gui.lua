@@ -178,6 +178,7 @@ function Root:constructor()
 	Root.superClass.constructor(self,nil)
 	self.focus = nil
 	self.size = {term.getSize()}
+	self.backgroundColor = colors.lightGray
 end
 
 function Root:on_event(evt)
@@ -206,16 +207,17 @@ function Root:layout_children()
 end
 
 function Root:render()
-	term.setBackgroundColor(colors.lightGray)
+	term.setBackgroundColor(self.backgroundColor)
 	term.clear()
 end
 
 local LinearContainer = Container:subclass()
 
-function LinearContainer:constructor(root,axis,spacing)
+function LinearContainer:constructor(root,axis,spacing,padding)
 	LinearContainer.superClass.constructor(self,root)
 	self.axis = axis
 	self.spacing = spacing
+	self.padding = padding
 end
 
 function LinearContainer:add_child(child,fill_major,fill_minor,align)
@@ -235,11 +237,11 @@ end
 function LinearContainer:get_preferred_size()
 	local axis2 = self:get_minor_axis()
 	
-	local pref_size = {0,0}
+	local pref_size = {self.padding * 2,self.padding * 2}
 	for i=1,#self.children do
 		local child = self.children[i]
 		local c_pref_size = child:get_preferred_size()
-		pref_size[axis2] = math.max(pref_size[axis2],c_pref_size[axis2])
+		pref_size[axis2] = math.max(pref_size[axis2],c_pref_size[axis2] + self.padding * 2)
 		pref_size[self.axis] = pref_size[self.axis] + c_pref_size[self.axis]
 		if i ~= #self.children then
 			pref_size[self.axis] = pref_size[self.axis] + self.spacing
@@ -252,7 +254,7 @@ end
 function LinearContainer:layout_children()
 	local axis2 = self:get_minor_axis()
 	
-	local space_free = self.size[self.axis]
+	local space_free = self.size[self.axis] - self.padding * 2
 	local children_fill = 0
 	local preferred_sizes = {}
 	
@@ -271,7 +273,7 @@ function LinearContainer:layout_children()
 		end
 	end
 	
-	local current_pos = self.pos[self.axis]
+	local current_pos = self.pos[self.axis] + self.padding
 	local fill_count = 0
 	
 	for i=1,#self.children do
@@ -281,7 +283,7 @@ function LinearContainer:layout_children()
 		
 		if child.layout.fill_major then
 			fill_count = fill_count + 1
-			-- TODO: fix rounding errors
+			
 			size = math.max((math.floor(space_free * fill_count / children_fill)
 				- math.floor(space_free * (fill_count-1) / children_fill)),0)
 		else
@@ -291,25 +293,49 @@ function LinearContainer:layout_children()
 		child.pos[self.axis] = current_pos
 		child.size[self.axis] = size
 		
+		local cell_size = self.size[axis2] - self.padding * 2
+		
 		if child.layout.fill_minor then
-			child.size[axis2] = self.size[axis2]
+			child.size[axis2] = cell_size
 		else
-			child.size[axis2] = math.min(pref_size[axis2],self.size[axis2])
+			child.size[axis2] = math.min(pref_size[axis2],cell_size)
 		end
 		
 		if child.layout.align == LinearAlign.CENTER then
-			child.pos[axis2] = self.pos[axis2]+math.floor((self.size[axis2]-child.size[axis2])/2)
+			child.pos[axis2] = self.pos[axis2]+self.padding+math.floor((cell_size-child.size[axis2])/2)
 		elseif child.layout.align == LinearAlign.START then
-			child.pos[axis2] = self.pos[axis2]
+			child.pos[axis2] = self.pos[axis2]+self.padding
 		elseif child.layout.align == LinearAlign.END then
-			child.pos[axis2] = self.pos[axis2]+self.size[axis2]-child.size[axis2]
+			child.pos[axis2] = self.pos[axis2]+self.size[axis2]-self.padding-child.size[axis2]
 		end
 		
 		current_pos = current_pos + size + self.spacing
 	end
 end
 
--- INTERACTIVE WIDGET CLASSES
+-- RENDERED WIDGET CLASSES
+
+local Label = Widget:subclass()
+
+function Label:constructor(root,text)
+	Label.superClass.constructor(self,root)
+	self.text = text
+	self.backgroundColor = colors.lightGray
+	self.textColor = colors.black
+end
+
+function Label:render()
+	if self.size[2] > 0 then
+		term.setBackgroundColor(self.backgroundColor)
+		term.setTextColor(self.textColor)
+		term.setCursorPos(self.pos[1],self.pos[2])
+		term.write(string.sub(self.text,1,math.min(#self.text,self.size[1])))
+	end
+end
+
+function Label:get_preferred_size()
+	return {#self.text,1}
+end
 
 local Button = Widget:subclass()
 
@@ -318,7 +344,12 @@ function Button:constructor(root,text)
 	self.text = text
 	self.color = colors.blue
 	self.pushedColor = colors.cyan
+	self.textColor = colors.white
+	self.held = false
 end
+
+-- ***IMPORTANT: Override this method on a Button instance to set behavior***
+function Button:on_pressed() end
 
 function Button:get_preferred_size()
 	return {#self.text+2,1}
@@ -326,12 +357,13 @@ end
 
 function Button:render()
 	--getSuper(Button).render(self)
-	if self.root.focus == self then
+	-- TODO: render outline when focused
+	if self.held then --self.root.focus == self then
 		term.setBackgroundColor(self.pushedColor)
 	else
 		term.setBackgroundColor(self.color)
 	end
-	term.setTextColor(colors.white)
+	term.setTextColor(self.textColor)
 	local myX,myY = self.pos[1], self.pos[2]
 	
 	for y=1,self.size[2] do
@@ -341,9 +373,43 @@ function Button:render()
 	
 	if self.size[2] > 0 then
 		local text_x = myX + math.max(math.floor((self.size[1]-#self.text)/2),0)
-		local text_y = myY + math.max(math.floor(self.size[2]/2),0)
+		local text_y = myY + math.max(math.floor((self.size[2]-1)/2),0)
 		term.setCursorPos(text_x,text_y)
 		term.write(string.sub(self.text,1,math.min(#self.text,self.size[1])))
+	end
+end
+
+function Button:on_mouse_down(btn,x,y)
+	self.held = true
+	self.dirty = true
+end
+
+function Button:on_mouse_up(btn,x,y)
+	self.held = false
+	self.dirty = true
+	self:on_pressed()
+end
+
+function Button:on_key_down(key,held)
+	if (not held) and key == keys.space or key == keys.enter then
+		self.held = true
+		self.dirty = true
+	end
+end
+
+function Button:on_key_up(key)
+	if key == keys.space or key == keys.enter then
+		self.held = false
+		self.dirty = true
+		self:on_pressed()
+	end
+end
+
+function Button:on_mouse_up(btn,x,y)
+	self.held = false
+	self.dirty = true
+	if self:contains_point(x,y) then
+		self:on_pressed()
 	end
 end
 
@@ -352,19 +418,25 @@ function Button:on_focus(focused)
 end
 
 local root = Root:new()
-local box = LinearContainer:new(root,2,1)
-local box2 = LinearContainer:new(root,1,1)
-local btn = Button:new(root,"Hello!")
+local box = LinearContainer:new(root,2,1,1)
+local box2 = LinearContainer:new(root,1,0,0)
+local lbl = Label:new(root,"Hello!")
+local btn1 = Button:new(root,"Button 1")
 local btn2 = Button:new(root,"Button 2")
-local btn3 = Button:new(root,"Btn 3")
-local btn4 = Button:new(root,"Btn 4")
+local btn3 = Button:new(root,"Button 3")
+
+btn3.color = colors.cyan
+btn3.pushedColor = colors.green
+--function btn1:on_pressed()
+--	shell.run("worm")
+--end
 
 root:add_child(box2)
-box2:add_child(btn4,true,true,LinearAlign.START)
+box2:add_child(btn3,true,true,LinearAlign.START)
 box2:add_child(box,false,true,LinearAlign.START)
-box:add_child(btn,false,false,LinearAlign.START)
+box:add_child(lbl,false,false,LinearAlign.START)
+box:add_child(btn1,true,false,LinearAlign.START)
 box:add_child(btn2,true,false,LinearAlign.START)
-box:add_child(btn3,false,false,LinearAlign.START)
 
 root:on_layout()
 --print(box.size[1],box.size[2])
