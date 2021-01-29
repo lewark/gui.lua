@@ -56,12 +56,20 @@ local Widget = Object:subclass()
 
 function Widget:constructor(root)
 	self.size = {0,0}
-	self.preferred_size = {0,0} -- TODO: move to method
 	self.pos = {1,1}
 	self.layout = {}
 	self.dirty = true
 	self.parent = nil
 	self.root = root
+end
+
+function Widget:contains_point(x,y)
+	return (
+		x >= self.pos[1] and 
+		x < self.pos[1]+self.size[1] and 
+		y >= self.pos[2] and 
+		y < self.pos[2]+self.size[2]
+	)
 end
 
 function Widget:on_redraw()
@@ -75,16 +83,11 @@ function Widget:on_layout()
 	self.dirty = true
 end
 
-function Widget:render() end
-
-function Widget:contains_point(x,y)
-	return (
-		x >= self.pos[1] and 
-		x < self.pos[1]+self.size[1] and 
-		y >= self.pos[2] and 
-		y < self.pos[2]+self.size[2]
-	)
+function Widget:get_preferred_size()
+	return {0, 0}
 end
+
+function Widget:render() end
 
 function Widget:on_key_down(key,held) end
 function Widget:on_key_up(key) end
@@ -222,19 +225,46 @@ function LinearContainer:add_child(child,fill_major,fill_minor,align)
 	child.layout.align = align
 end
 
+function LinearContainer:get_minor_axis()
+	if self.axis == 1 then
+		return 2
+	end
+	return 1
+end
+
+function LinearContainer:get_preferred_size()
+	local axis2 = self:get_minor_axis()
+	
+	local pref_size = {0,0}
+	for i=1,#self.children do
+		local child = self.children[i]
+		local c_pref_size = child:get_preferred_size()
+		pref_size[axis2] = math.max(pref_size[axis2],c_pref_size[axis2])
+		pref_size[self.axis] = pref_size[self.axis] + c_pref_size[self.axis]
+		if i ~= #self.children then
+			pref_size[self.axis] = pref_size[self.axis] + self.spacing
+		end
+	end
+	
+	return pref_size
+end
+
 function LinearContainer:layout_children()
-	local axis2 = 1
-	if self.axis == 1 then axis2 = 2 end
+	local axis2 = self:get_minor_axis()
 	
 	local space_free = self.size[self.axis]
 	local children_fill = 0
+	local preferred_sizes = {}
 	
 	for i=1,#self.children do
 		local child = self.children[i]
+		local pref_size = child:get_preferred_size()
+		table.insert(preferred_sizes, pref_size)
+		
 		if child.layout.fill_major then
 			children_fill = children_fill + 1
 		else
-			space_free = space_free - child.preferred_size[self.axis]
+			space_free = space_free - pref_size[self.axis]
 		end
 		if i ~= #self.children then
 			space_free = space_free - self.spacing
@@ -247,14 +277,15 @@ function LinearContainer:layout_children()
 	for i=1,#self.children do
 		local child = self.children[i]
 		local size = 0
+		local pref_size = preferred_sizes[i]
 		
 		if child.layout.fill_major then
 			fill_count = fill_count + 1
 			-- TODO: fix rounding errors
-			size = (math.floor(space_free * fill_count / children_fill)
-				- math.floor(space_free * (fill_count-1) / children_fill))
+			size = math.max((math.floor(space_free * fill_count / children_fill)
+				- math.floor(space_free * (fill_count-1) / children_fill)),0)
 		else
-			size = child.preferred_size[self.axis]
+			size = pref_size[self.axis]
 		end
 		
 		child.pos[self.axis] = current_pos
@@ -263,7 +294,7 @@ function LinearContainer:layout_children()
 		if child.layout.fill_minor then
 			child.size[axis2] = self.size[axis2]
 		else
-			child.size[axis2] = math.min(child.preferred_size[axis2],self.size[axis2])
+			child.size[axis2] = math.min(pref_size[axis2],self.size[axis2])
 		end
 		
 		if child.layout.align == LinearAlign.CENTER then
@@ -284,10 +315,13 @@ local Button = Widget:subclass()
 
 function Button:constructor(root,text)
 	Button.superClass.constructor(self,root)
-	self.preferred_size = {#text+2,1}
 	self.text = text
 	self.color = colors.blue
 	self.pushedColor = colors.cyan
+end
+
+function Button:get_preferred_size()
+	return {#self.text+2,1}
 end
 
 function Button:render()
@@ -304,10 +338,13 @@ function Button:render()
 		term.setCursorPos(myX,myY+y-1)
 		term.write(string.rep(" ",self.size[1]))
 	end
-	local text_x = myX + math.max(math.floor((self.size[1]-#self.text)/2),0)
-	local text_y = myY + math.max(math.floor(self.size[2]/2),0)
-	term.setCursorPos(text_x,text_y)
-	term.write(string.sub(self.text,1,math.min(#self.text,self.size[1])))
+	
+	if self.size[2] > 0 then
+		local text_x = myX + math.max(math.floor((self.size[1]-#self.text)/2),0)
+		local text_y = myY + math.max(math.floor(self.size[2]/2),0)
+		term.setCursorPos(text_x,text_y)
+		term.write(string.sub(self.text,1,math.min(#self.text,self.size[1])))
+	end
 end
 
 function Button:on_focus(focused)
@@ -315,15 +352,19 @@ function Button:on_focus(focused)
 end
 
 local root = Root:new()
-local box = LinearContainer:new(root,1,0)
+local box = LinearContainer:new(root,2,1)
+local box2 = LinearContainer:new(root,1,1)
 local btn = Button:new(root,"Hello!")
 local btn2 = Button:new(root,"Button 2")
 local btn3 = Button:new(root,"Btn 3")
+local btn4 = Button:new(root,"Btn 4")
 
-root:add_child(box)
-box:add_child(btn,true,false,LinearAlign.START)
+root:add_child(box2)
+box2:add_child(btn4,true,true,LinearAlign.START)
+box2:add_child(box,false,true,LinearAlign.START)
+box:add_child(btn,false,false,LinearAlign.START)
 box:add_child(btn2,true,false,LinearAlign.START)
-box:add_child(btn3,true,false,LinearAlign.CENTER)
+box:add_child(btn3,false,false,LinearAlign.START)
 
 root:on_layout()
 --print(box.size[1],box.size[2])
