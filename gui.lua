@@ -1,8 +1,13 @@
--- gui.lua: simple GUI toolkit for ComputerCraft
+-- gui.lua: GUI toolkit for ComputerCraft
 
 local mouse_events = {"mouse_click","mouse_up","mouse_scroll","mouse_drag"}
 local keybd_events = {"char","key","key_up","paste"}
 
+local SpecialChars = {
+	MINIMIZE=22,MAXIMIZE=23,STRIPES=127,
+	TRI_RIGHT=16,TRI_LEFT=17,TRI_UP=30,TRI_DOWN=31,
+	ARROW_UP=24,ARROW_DOWN=25,ARROW_RIGHT=26,ARROW_LEFT=27,ARROW_LR=29,ARROW_UD=18
+}
 local LinearAlign = {CENTER=0,START=1,END=2}
 local BoxAlign = {CENTER=0,TOP=1,BOTTOM=2,LEFT=3,RIGHT=4}
 
@@ -776,14 +781,48 @@ function TextArea:mouseSelect(x, y)
 	self.dirty = true
 end
 
-local ListBox = Widget:subclass()
+local ScrollWidget = Widget:subclass()
+
+function ScrollWidget:init(root)
+	ScrollWidget.superClass.init(self,root)
+	self.scroll = 0
+	self.scrollbar = nil
+end
+
+-- Override this function to set the scroll range
+function ScrollWidget:getMaxScroll()
+	return 0
+end
+
+function ScrollWidget:setScroll(scroll)
+	self.scroll = scroll
+	local maxScroll = self:getMaxScroll()
+	if self.scroll > maxScroll then
+		self.scroll = maxScroll
+	end
+	if self.scroll < 0 then
+		self.scroll = 0
+	end
+	self.dirty = true
+	if self.scrollbar then
+		self.scrollbar.dirty = true
+	end
+end
+
+function ScrollWidget:onMouseScroll(dir, x, y)
+	self:setScroll(self.scroll+dir)
+end
+
+-- List box. Allows an array of choices to be displayed, one of which can be
+--   selected at a time. Can be scrolled using the mouse wheel or a ScrollBar
+--   widget, and is able to efficiently display large amounts of items.
+local ListBox = ScrollWidget:subclass()
 
 function ListBox:init(root,cols,rows,items)
 	ListBox.superClass.init(self,root)
 	self.items = items
 	self.cols = cols
 	self.rows = rows
-	self.scroll = 0
 	self.bgColor = colors.white
 	self.textColor = colors.black
 	self.selBgColor = colors.cyan
@@ -840,15 +879,8 @@ function ListBox:setSelected(n)
 	end
 end
 
-function ListBox:setScroll(scroll)
-	self.scroll = scroll
-	if self.scroll + self.size[2] > #self.items then
-		self.scroll = #self.items-self.size[2]
-	end
-	if self.scroll < 0 then
-		self.scroll = 0
-	end
-	self.dirty = true
+function ListBox:getMaxScroll()
+	return #self.items-self.size[2]
 end
 
 function ListBox:mouseSelect(x,y)
@@ -858,10 +890,6 @@ end
 
 function ListBox:onMouseDown(button, x, y)
 	self:mouseSelect(x,y)
-end
-
-function ListBox:onMouseScroll(dir, x, y)
-	self:setScroll(self.scroll+dir)
 end
 
 function ListBox:onMouseDrag(button, x, y)
@@ -887,9 +915,158 @@ function ListBox:onKeyDown(key,held)
 	end
 end
 
+-- Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
+local ScrollBar = Widget:subclass()
+
+-- todo: add horizontal scrollbars
+function ScrollBar:init(root,scrollWidget)
+	ScrollBar.superClass.init(self,root)
+	self.scrollWidget = scrollWidget
+	scrollWidget.scrollbar = self
+	self.dragOffset = 0
+	self.grab = 0
+	self.barColor = colors.blue
+	self.textColor = colors.white
+	self.pressedColor = colors.cyan
+	self.disabledColor = colors.gray
+	self.bgColor = colors.white
+	self.bgPressedColor = colors.gray
+end
+
+function ScrollBar:getPreferredSize()
+	return {1, 1}
+end
+
+function ScrollBar:canScroll()
+	return (self.scrollWidget:getMaxScroll() > 0)
+end
+
+function ScrollBar:getBarPos()
+	local scroll = self.scrollWidget.scroll
+	local h = self:getBarHeight()
+	local maxScroll = self.scrollWidget:getMaxScroll()
+	return math.floor((scroll/maxScroll)*(self.size[2]-2-h)+0.5)+1
+end
+
+function ScrollBar:getBarHeight()
+	local maxScroll = self.scrollWidget:getMaxScroll()
+	return math.max(math.floor((self.size[2]-2)*self.scrollWidget.size[2]/(maxScroll+self.scrollWidget.size[2])+0.5),1)
+end
+
+-- kinda odd that the code to render a scrollbar is much longer
+-- than that to render a list box (the thing you actually care about)
+function ScrollBar:render()
+	local enabled = self:canScroll()
+	local barColor = self.barColor
+	
+	if not enabled then
+		barColor = self.disabledColor
+	end
+	
+	term.setTextColor(self.textColor)
+	
+	if self.drag == 4 then
+		term.setBackgroundColor(self.pressedColor)
+	else
+		term.setBackgroundColor(barColor)
+	end
+	term.setCursorPos(self.pos[1],self.pos[2])
+	term.write(string.char(SpecialChars.TRI_UP))
+	
+	if self.drag == 5 then
+		term.setBackgroundColor(self.pressedColor)
+	else
+		term.setBackgroundColor(barColor)
+	end
+	term.setCursorPos(self.pos[1],self.pos[2]+self.size[2]-1)
+	term.write(string.char(SpecialChars.TRI_DOWN))
+	
+	if enabled then
+		local barPos = self:getBarPos()
+		local barHeight = self:getBarHeight()
+		local handleColor = barColor
+		local bgTColor = self.bgColor
+		local bgBColor = self.bgColor
+		if self.drag == 1 then
+			handleColor = self.pressedColor
+		end
+		if self.drag == 2 then
+			bgTColor = self.bgPressedColor
+		end
+		if self.drag == 3 then
+			bgBColor = self.bgPressedColor
+		end
+		
+		for i=1,self.size[2]-2 do
+			term.setCursorPos(self.pos[1],self.pos[2]+i)
+			if i < barPos then
+				term.setBackgroundColor(bgTColor)
+			elseif i >= barPos and i < barPos+barHeight then
+				term.setBackgroundColor(handleColor)
+			else
+				term.setBackgroundColor(bgBColor)
+			end
+			term.write(" ")
+		end
+	else
+		term.setBackgroundColor(self.disabledColor)
+		for i=1,self.size[2]-2 do
+			term.setCursorPos(self.pos[1],self.pos[2]+i)
+			term.write(" ")
+		end
+	end
+end
+
+function ScrollBar:onMouseScroll(dir, x, y)
+	self.scrollWidget:setScroll(self.scrollWidget.scroll+dir)
+end
+
+-- BUG: can sometimes scroll to invalid locations on edge cases (3 unit tall scrollbar)
+-- todo: add timer to repeat buttons on hold
+function ScrollBar:onMouseDown(btn, x, y)
+	if self:canScroll() then
+		if y == self.pos[2] then
+			self.drag = 4
+			self.scrollWidget:setScroll(self.scrollWidget.scroll-1)
+		elseif y == self.pos[2]+self.size[2]-1 then
+			self.drag = 5
+			self.scrollWidget:setScroll(self.scrollWidget.scroll+1)
+		else
+			local barPos = self:getBarPos()
+			local barHeight = self:getBarHeight()
+			if y < self.pos[2] + barPos then
+				self.scrollWidget:setScroll(self.scrollWidget.scroll-self.scrollWidget.size[2])
+				self.drag = 2
+			elseif y < self.pos[2] + barPos + barHeight then
+				self.drag = 1
+				self.dragOffset = y - self.pos[2] - barPos
+			else
+				self.scrollWidget:setScroll(self.scrollWidget.scroll+self.scrollWidget.size[2])
+				self.drag = 3
+			end
+		end
+		self.dirty = true
+	end
+end
+
+function ScrollBar:onMouseDrag(btn, x, y)
+	if self:canScroll() and self.drag == 1 then
+		local barHeight = self:getBarHeight()
+		local size = self.size[2]-2
+		local maxScroll = self.scrollWidget:getMaxScroll()
+		local scroll = math.floor((y-self.pos[2]-self.dragOffset-1)*(maxScroll/(size-barHeight))+0.5)
+		self.scrollWidget:setScroll(scroll)
+	end
+end
+
+function ScrollBar:onMouseUp(btn, x, y)
+	self.drag = 0
+	self.dirty = true
+	self.root.focus = self.scrollWidget
+end
+
 -- TODO:
--- Decide whether scrollbars should be part of ScrollWidgets or a separate widget
--- Add BoxContainer, CheckBox, ComboBox, ScrollWidget, [ScrollBar,] Slider,
+-- Add BoxContainer, CheckBox, ComboBox, Slider,
 -- 	ScrollContainer, Image, TabContainer, MenuBar
 
 local root = Root:new()
@@ -899,7 +1076,8 @@ local lbl = Label:new(root,"Hello!")
 local btn1 = Button:new(root,"Button 1")
 local btn2 = Button:new(root,"Button 2")
 local area = ListBox:new(root,10,10,{})
-for i=1,15 do
+local sb = ScrollBar:new(root,area)
+for i=1,64 do
 	table.insert(area.items,"Item "..tostring(i))
 end
 btn1.enabled = false
@@ -916,6 +1094,7 @@ btn1.enabled = false
 
 root:addChild(box2)
 box2:addChild(area,true,true,LinearAlign.START)
+box2:addChild(sb,false,true,LinearAlign.START)
 box2:addChild(box,false,true,LinearAlign.START)
 box:addChild(lbl,false,false,LinearAlign.START)
 box:addChild(btn1,true,false,LinearAlign.START)
