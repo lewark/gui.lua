@@ -1,7 +1,7 @@
 -- gui.lua: GUI toolkit for ComputerCraft
 
-local mouse_events = {"mouse_click","mouse_up","mouse_scroll","mouse_drag"}
-local keybd_events = {"char","key","key_up","paste"}
+local top_events = {"mouse_click","mouse_scroll"}
+local focus_events = {"mouse_up","mouse_drag","char","key","key_up","paste"}
 
 local SpecialChars = {
 	MINIMIZE=22,MAXIMIZE=23,STRIPES=127,
@@ -102,49 +102,42 @@ function Widget:render() end
 function Widget:focusPostRender() end
 
 -- Widget event handlers. Override these to provide custom behavior
-function Widget:onKeyDown(key,held) end
-function Widget:onKeyUp(key) end
-function Widget:onCharTyped(chr) end
-function Widget:onPaste(text) end
-function Widget:onMouseDown(btn,x,y) end
-function Widget:onMouseUp(btn,x,y) end
-function Widget:onMouseScroll(dir,x,y) end
-function Widget:onMouseDrag(btn,x,y) end
-function Widget:onFocus(focused) end
+function Widget:onKeyDown(key,held) return true end
+function Widget:onKeyUp(key) return true end
+function Widget:onCharTyped(chr) return true end
+function Widget:onPaste(text) return true end
+function Widget:onMouseDown(btn,x,y) return true end
+function Widget:onMouseUp(btn,x,y) return true end
+function Widget:onMouseScroll(dir,x,y) return true end
+function Widget:onMouseDrag(btn,x,y) return true end
+function Widget:onFocus(focused) return true end
 
+-- Handles any input events recieved by the widget and passes them to
+-- the appropriate callback functions
+-- return true from an event callback to consume the event
+-- (mainly useful for mouse_click and mouse_scroll)
 function Widget:onEvent(evt)
-	if contains(mouse_events,evt[1]) then
-		if (not self.root) or (self.root.focus == self) then
-			if evt[1] == "mouse_drag" then
-				self:onMouseDrag(evt[2],evt[3],evt[4])
-			elseif evt[1] == "mouse_up" then
-				self:onMouseUp(evt[2],evt[3],evt[4])
-			end
+	if evt[1] == "mouse_drag" then
+		return self:onMouseDrag(evt[2],evt[3],evt[4])
+	elseif evt[1] == "mouse_up" then
+		return self:onMouseUp(evt[2],evt[3],evt[4])
+	elseif evt[1] == "mouse_click" then
+		if self.root then
+			self.root.focus = self
 		end
-		
-		if not self:containsPoint(evt[3],evt[4]) then
-			return
-		end
-		
-		if evt[1] == "mouse_click" then
-			if self.root then
-				self.root.focus = self
-			end
-			self:onMouseDown(evt[2],evt[3],evt[4])
-		elseif evt[1] == "mouse_scroll" then
-			self:onMouseScroll(evt[2],evt[3],evt[4])
-		end
-	elseif (not self.root) or ((self.root.focus == self) and contains(keybd_events,evt[1])) then
-		if evt[1] == "char" then
-			self:onCharTyped(evt[2])
-		elseif evt[1] == "key" then
-			self:onKeyDown(evt[2],evt[3])
-		elseif evt[1] == "key_up" then
-			self:onKeyUp(evt[2])
-		elseif evt[1] == "paste" then
-			self:onPaste(evt[2])
-		end
+		return self:onMouseDown(evt[2],evt[3],evt[4])
+	elseif evt[1] == "mouse_scroll" then
+		return self:onMouseScroll(evt[2],evt[3],evt[4])
+	elseif evt[1] == "char" then
+		return self:onCharTyped(evt[2])
+	elseif evt[1] == "key" then
+		return self:onKeyDown(evt[2],evt[3])
+	elseif evt[1] == "key_up" then
+		return self:onKeyUp(evt[2])
+	elseif evt[1] == "paste" then
+		return self:onPaste(evt[2])
 	end
+	return false
 end
 
 -- CONTAINER CLASSES
@@ -168,12 +161,24 @@ function Container:onRedraw()
 	end
 end
 
--- TODO: Change event system to respect layering
 function Container:onEvent(evt)
-	Container.superClass.onEvent(self,evt)
-	for _,widget in pairs(self.children) do
-		widget:onEvent(evt)
+	local ret = Container.superClass.onEvent(self,evt)
+	if contains(top_events,evt[1]) then
+		for i=#self.children,1,-1 do
+			local widget = self.children[i]
+			if widget:containsPoint(evt[3],evt[4]) and widget:onEvent(evt) then
+				return true
+			end
+		end
+	elseif not contains(focus_events,evt[1]) then
+		for i=1,#self.children do
+			local widget = self.children[i]
+			if widget:onEvent(evt) then
+				return true
+			end
+		end
 	end
+	return ret
 end
 
 function Container:onLayout()
@@ -210,11 +215,18 @@ end
 
 function Root:onEvent(evt)
 	local focus = self.focus
-	Root.superClass.onEvent(self,evt)
+	local ret = Root.superClass.onEvent(self,evt)
+	
+	if self.focus and contains(focus_events,evt[1]) and self.focus:onEvent(evt) then
+		ret = true
+	end
+	
 	if evt[1] == "term_resize" then
 		self.size = {term.getSize()}
 		self:onLayout()
+		ret = true
 	end
+	
 	if self.focus ~= focus then
 		if focus then
 			focus:onFocus(false)
@@ -223,14 +235,21 @@ function Root:onEvent(evt)
 			self.focus:onFocus(true)
 		end
 	end
+	
 	self:onRedraw()
+	
+	return ret
 end
 
+-- TODO: make rendering respect layers
 function Root:layoutChildren()
-	for _,widget in pairs(self.children) do
+	--for _,widget in pairs(self.children) do
+	if #self.children >= 1 then
+		local widget = self.children[1]
 		widget.pos = {1,1}
 		widget.size = {self.size[1],self.size[2]}
 	end
+	--end
 end
 
 function Root:render()
@@ -422,6 +441,7 @@ function Button:onMouseDown(btn,x,y)
 		self.held = true
 		self.dirty = true
 	end
+	return true
 end
 
 function Button:onMouseUp(btn,x,y)
@@ -432,6 +452,7 @@ function Button:onMouseUp(btn,x,y)
 			self:onPressed()
 		end
 	end
+	return true
 end
 
 function Button:onKeyDown(key,held)
@@ -439,6 +460,7 @@ function Button:onKeyDown(key,held)
 		self.held = true
 		self.dirty = true
 	end
+	return true
 end
 
 function Button:onKeyUp(key)
@@ -447,12 +469,14 @@ function Button:onKeyUp(key)
 		self.dirty = true
 		self:onPressed()
 	end
+	return true
 end
 
 function Button:onFocus(focused)
 	if self.enabled then
 		self.dirty = true
 	end
+	return true
 end
 
 -- A text field. You can type text in it.
@@ -517,28 +541,28 @@ function TextField:moveCursor(newPos)
 end
 
 function TextField:onKeyDown(key,held)
-	if self.root.focus == self then
-		if key == keys.backspace then
-			self.text = string.sub(self.text,1,math.max(self.char-2,0)) .. string.sub(self.text,self.char,#self.text)
-			self:moveCursor(self.char-1)
-		elseif key == keys.delete then
-			self.text = string.sub(self.text,1,math.max(self.char-1,0)) .. string.sub(self.text,self.char+1,#self.text)
-		elseif key == keys.home then
-			self:moveCursor(1)
-		elseif key == keys['end'] then
-			self:moveCursor(#self.text+1)
-		elseif key == keys.left then
-			self:moveCursor(self.char-1)
-		elseif key == keys.right then
-			self:moveCursor(self.char+1)
-		end
-		self.dirty = true
+	if key == keys.backspace then
+		self.text = string.sub(self.text,1,math.max(self.char-2,0)) .. string.sub(self.text,self.char,#self.text)
+		self:moveCursor(self.char-1)
+	elseif key == keys.delete then
+		self.text = string.sub(self.text,1,math.max(self.char-1,0)) .. string.sub(self.text,self.char+1,#self.text)
+	elseif key == keys.home then
+		self:moveCursor(1)
+	elseif key == keys['end'] then
+		self:moveCursor(#self.text+1)
+	elseif key == keys.left then
+		self:moveCursor(self.char-1)
+	elseif key == keys.right then
+		self:moveCursor(self.char+1)
 	end
+	self.dirty = true
+	return true
 end
 
 function TextField:onFocus(focused)
 	term.setCursorBlink(focused)
 	self.dirty = true
+	return true
 end
 
 function TextField:focusPostRender()
@@ -556,6 +580,7 @@ function TextField:onCharTyped(chr)
 		self:moveCursor(self.char + 1)
 		self.dirty = true
 	end
+	return true
 end
 
 function TextField:onPaste(text)
@@ -564,14 +589,17 @@ function TextField:onPaste(text)
 		self:moveCursor(self.char + #text)
 		self.dirty = true
 	end
+	return true
 end
 
 function TextField:onMouseDown(button, x, y)
 	self:mouseSelect(x,y)
+	return true
 end
 
 function TextField:onMouseDrag(button, x, y)
 	self:mouseSelect(x,y)
+	return true
 end
 
 -- TODO: Add area selection
@@ -665,67 +693,67 @@ end
 
 -- TODO: Add DELETE key, fix up/down behavior with wrapped strings
 function TextArea:onKeyDown(key,held)
-	if self.root.focus == self then
-		if key == keys.backspace then
-			if (self.charY > 1) and (self.charX == 1) then
-				local text = table.remove(self.text,self.charY)
-				self.charY = self.charY - 1
-				local text2 = self.text[self.charY]
-				self.charX = #self.text[self.charY]+1
-				self.text[self.charY] = text2 .. text
-			elseif self.charX > 1 then
-				local text = self.text[self.charY]
-				self.text[self.charY] = string.sub(text,1,self.charX-2) .. string.sub(text,self.charX,#text)
-				self.charX = math.max(1,self.charX-1)
-			end
-		elseif key == keys.left then
-			if (self.charX == 1) and (self.charY > 1) then
-				self.charY = self.charY - 1
-				self.charX = #self.text[self.charY]+1
-			else
-				self.charX = math.max(1,self.charX-1)
-			end
-		elseif key == keys.right then
+	if key == keys.backspace then
+		if (self.charY > 1) and (self.charX == 1) then
+			local text = table.remove(self.text,self.charY)
+			self.charY = self.charY - 1
+			local text2 = self.text[self.charY]
+			self.charX = #self.text[self.charY]+1
+			self.text[self.charY] = text2 .. text
+		elseif self.charX > 1 then
 			local text = self.text[self.charY]
-			if (self.charX == #text+1) and (self.charY < #self.text) then
-				self.charX = 1
-				self.charY = self.charY + 1
-			else
-				self.charX = math.min(#text+1,self.charX+1)
-			end
-		elseif key == keys.down then
-			if self.charX + self.size[1] <= #self.text[self.charY]+1 then
-				self.charX = self.charX + self.size[1]
-			elseif self.charY < #self.text then
-				self.charY = self.charY+1
-				self.charX = math.min(self.charX,#self.text[self.charY]+1)
-			else
-				self.charX = #self.text[self.charY]
-			end
-		elseif key == keys.up then
-			if self.charX - self.size[1] >= 1 then
-				self.charX = self.charX - self.size[1]
-			elseif self.charY > 1 then
-				self.charY = self.charY-1
-				self.charX = math.min(self.charX,#self.text[self.charY]+1)
-			else
-				self.charX = 1
-			end
-		elseif key == keys.enter then
-			local text = self.text[self.charY]
-			local newline = string.sub(text,self.charX,#text)
-			self.text[self.charY] = string.sub(text,1,self.charX-1)
+			self.text[self.charY] = string.sub(text,1,self.charX-2) .. string.sub(text,self.charX,#text)
+			self.charX = math.max(1,self.charX-1)
+		end
+	elseif key == keys.left then
+		if (self.charX == 1) and (self.charY > 1) then
+			self.charY = self.charY - 1
+			self.charX = #self.text[self.charY]+1
+		else
+			self.charX = math.max(1,self.charX-1)
+		end
+	elseif key == keys.right then
+		local text = self.text[self.charY]
+		if (self.charX == #text+1) and (self.charY < #self.text) then
 			self.charX = 1
 			self.charY = self.charY + 1
-			table.insert(self.text,self.charY,newline)
+		else
+			self.charX = math.min(#text+1,self.charX+1)
 		end
-		self.dirty = true
+	elseif key == keys.down then
+		if self.charX + self.size[1] <= #self.text[self.charY]+1 then
+			self.charX = self.charX + self.size[1]
+		elseif self.charY < #self.text then
+			self.charY = self.charY+1
+			self.charX = math.min(self.charX,#self.text[self.charY]+1)
+		else
+			self.charX = #self.text[self.charY]
+		end
+	elseif key == keys.up then
+		if self.charX - self.size[1] >= 1 then
+			self.charX = self.charX - self.size[1]
+		elseif self.charY > 1 then
+			self.charY = self.charY-1
+			self.charX = math.min(self.charX,#self.text[self.charY]+1)
+		else
+			self.charX = 1
+		end
+	elseif key == keys.enter then
+		local text = self.text[self.charY]
+		local newline = string.sub(text,self.charX,#text)
+		self.text[self.charY] = string.sub(text,1,self.charX-1)
+		self.charX = 1
+		self.charY = self.charY + 1
+		table.insert(self.text,self.charY,newline)
 	end
+	self.dirty = true
+	return true
 end
 
 function TextArea:onFocus(focused)
 	term.setCursorBlink(focused)
 	self.dirty = true
+	return true
 end
 
 function TextArea:focusPostRender()
@@ -733,29 +761,29 @@ function TextArea:focusPostRender()
 end
 
 function TextArea:onCharTyped(chr)
-	if self.root.focus == self then
-		local text = self.text[self.charY]
-		self.text[self.charY] = string.sub(text,1,self.charX-1) .. chr .. string.sub(text,self.charX,#text)
-		self.charX = self.charX + 1
-		self.dirty = true
-	end
+	local text = self.text[self.charY]
+	self.text[self.charY] = string.sub(text,1,self.charX-1) .. chr .. string.sub(text,self.charX,#text)
+	self.charX = self.charX + 1
+	self.dirty = true
+	return true
 end
 
 function TextArea:onPaste(text)
-	if self.root.focus == self then
-		local text_line = self.text[self.charY]
-		self.text[self.charY] = string.sub(text_line,1,self.charX-1) .. text .. string.sub(text_line,self.charX,#text_line)
-		self.charX = self.charX + #text
-		self.dirty = true
-	end
+	local text_line = self.text[self.charY]
+	self.text[self.charY] = string.sub(text_line,1,self.charX-1) .. text .. string.sub(text_line,self.charX,#text_line)
+	self.charX = self.charX + #text
+	self.dirty = true
+	return true
 end
 
 function TextArea:onMouseDown(button, x, y)
 	self:mouseSelect(x,y)
+	return true
 end
 
 function TextArea:onMouseDrag(button, x, y)
 	self:mouseSelect(x,y)
+	return true
 end
 
 -- TODO: Add area selection
@@ -811,6 +839,7 @@ end
 
 function ScrollWidget:onMouseScroll(dir, x, y)
 	self:setScroll(self.scroll+dir)
+	return true
 end
 
 -- List box. Allows an array of choices to be displayed, one of which can be
@@ -890,29 +919,30 @@ end
 
 function ListBox:onMouseDown(button, x, y)
 	self:mouseSelect(x,y)
+	return true
 end
 
 function ListBox:onMouseDrag(button, x, y)
 	self:mouseSelect(x,y)
+	return true
 end
 
 function ListBox:onKeyDown(key,held)
-	if self.root.focus == self then
-		if key == keys.down then
-			self:setSelected(self.selected+1)
-		elseif key == keys.up then
-			self:setSelected(self.selected-1)
-		elseif key == keys.home then
-			self:setSelected(1)
-		elseif key == keys['end'] then
-			self:setSelected(#self.items)
-		elseif key == keys.pageUp then
-			self:setSelected(self.selected-(self.size[2]-1))
-		elseif key == keys.pageDown then
-			self:setSelected(self.selected+(self.size[2]-1))
-		end
-		self.dirty = true
+	if key == keys.down then
+		self:setSelected(self.selected+1)
+	elseif key == keys.up then
+		self:setSelected(self.selected-1)
+	elseif key == keys.home then
+		self:setSelected(1)
+	elseif key == keys['end'] then
+		self:setSelected(#self.items)
+	elseif key == keys.pageUp then
+		self:setSelected(self.selected-(self.size[2]-1))
+	elseif key == keys.pageDown then
+		self:setSelected(self.selected+(self.size[2]-1))
 	end
+	self.dirty = true
+	return true
 end
 
 -- Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
@@ -1019,6 +1049,7 @@ end
 
 function ScrollBar:onMouseScroll(dir, x, y)
 	self.scrollWidget:setScroll(self.scrollWidget.scroll+dir)
+	return true
 end
 
 -- BUG: can sometimes scroll to invalid locations on edge cases (3 unit tall scrollbar)
@@ -1047,6 +1078,7 @@ function ScrollBar:onMouseDown(btn, x, y)
 		end
 		self.dirty = true
 	end
+	return true
 end
 
 function ScrollBar:onMouseDrag(btn, x, y)
@@ -1057,12 +1089,14 @@ function ScrollBar:onMouseDrag(btn, x, y)
 		local scroll = math.floor((y-self.pos[2]-self.dragOffset-1)*(maxScroll/(size-barHeight))+0.5)
 		self.scrollWidget:setScroll(scroll)
 	end
+	return true
 end
 
 function ScrollBar:onMouseUp(btn, x, y)
 	self.drag = 0
 	self.dirty = true
 	self.root.focus = self.scrollWidget
+	return true
 end
 
 -- TODO:
@@ -1077,6 +1111,9 @@ local btn1 = Button:new(root,"Button 1")
 local btn2 = Button:new(root,"Button 2")
 local area = ListBox:new(root,10,10,{})
 local sb = ScrollBar:new(root,area)
+--local btn3 = Button:new(root,"Button 3")
+--btn3.pos = {20,10}
+--btn3.size = {10,3}
 for i=1,64 do
 	table.insert(area.items,"Item "..tostring(i))
 end
@@ -1093,6 +1130,7 @@ btn1.enabled = false
 --end
 
 root:addChild(box2)
+--root:addChild(btn3)
 box2:addChild(area,true,true,LinearAlign.START)
 box2:addChild(sb,false,true,LinearAlign.START)
 box2:addChild(box,false,true,LinearAlign.START)
