@@ -1,5 +1,4 @@
--- gui.lua
--- TODO: standardize, don't use both lowerCamelCase and snake_case
+-- gui.lua: simple GUI toolkit for ComputerCraft
 
 local mouse_events = {"mouse_click","mouse_up","mouse_scroll","mouse_drag"}
 local keybd_events = {"char","key","key_up","paste"}
@@ -19,24 +18,23 @@ local function contains(tbl,val)
 end
 
 -- OBJECT CLASS
--- Implements basic inheritance features
+-- Implements basic inheritance features.
 
 local Object = {}
 
+-- Call new() to create an instance of any class.
+-- Do not override this method. It will call the class's init() for you.
 function Object:new(...)
 	local instance = setmetatable({},{__index=self})
 	instance.class = self
-	instance:constructor(...)
+	instance:init(...)
 	return instance
 end
 
+-- Call subclass() to create a subclass of an existing class.
 function Object:subclass()
 	return setmetatable({superClass=self},{__index=self})
 end
-
---function Object:super(...)
---	return self.superClass.constructor(self, ...)
---end
 
 function Object:instanceof(class)
 	local c = self.class
@@ -49,13 +47,18 @@ function Object:instanceof(class)
 	return false
 end
 
-function Object:constructor(...) end
+-- The object's constructor. Override this method to initialize an Object subclass.
+-- init() parameters will be passed in from new().
+-- An object's init() may also call its super class's init() if desired.
+--   Use ClassName.superClass.init(self,...)
+-- This method should only be called from within new() or a subclass's init().
+function Object:init(...) end
 
 -- WIDGET CLASSES
 
 local Widget = Object:subclass()
 
-function Widget:constructor(root)
+function Widget:init(root)
 	self.size = {0,0}
 	self.pos = {1,1}
 	self.layout = {}
@@ -64,7 +67,7 @@ function Widget:constructor(root)
 	self.root = root
 end
 
-function Widget:contains_point(x,y)
+function Widget:containsPoint(x,y)
 	return (
 		x >= self.pos[1] and 
 		x < self.pos[1]+self.size[1] and 
@@ -73,45 +76,48 @@ function Widget:contains_point(x,y)
 	)
 end
 
-function Widget:on_redraw()
+function Widget:onRedraw()
 	if self.dirty then
 		self:render()
 		self.dirty = false
 	end
 end
 
-function Widget:on_layout()
+function Widget:onLayout()
 	self.dirty = true
 end
 
-function Widget:get_preferred_size()
+function Widget:getPreferredSize()
 	return {0, 0}
 end
 
+-- Widget render callbacks. Override these to draw a widget.
 function Widget:render() end
-function Widget:focus_postrender() end
+-- Post-render callback for focused widget. Used to position text field cursor.
+function Widget:focusPostRender() end
 
-function Widget:on_key_down(key,held) end
-function Widget:on_key_up(key) end
-function Widget:on_char(chr) end
-function Widget:on_paste(text) end
-function Widget:on_mouse_down(btn,x,y) end
-function Widget:on_mouse_up(btn,x,y) end
-function Widget:on_mouse_scroll(dir,x,y) end
-function Widget:on_mouse_drag(btn,x,y) end
-function Widget:on_focus(focused) end
+-- Widget event handlers. Override these to provide custom behavior
+function Widget:onKeyDown(key,held) end
+function Widget:onKeyUp(key) end
+function Widget:onCharTyped(chr) end
+function Widget:onPaste(text) end
+function Widget:onMouseDown(btn,x,y) end
+function Widget:onMouseUp(btn,x,y) end
+function Widget:onMouseScroll(dir,x,y) end
+function Widget:onMouseDrag(btn,x,y) end
+function Widget:onFocus(focused) end
 
-function Widget:on_event(evt)
+function Widget:onEvent(evt)
 	if contains(mouse_events,evt[1]) then
 		if (not self.root) or (self.root.focus == self) then
 			if evt[1] == "mouse_drag" then
-				self:on_mouse_drag(evt[2],evt[3],evt[4])
+				self:onMouseDrag(evt[2],evt[3],evt[4])
 			elseif evt[1] == "mouse_up" then
-				self:on_mouse_up(evt[2],evt[3],evt[4])
+				self:onMouseUp(evt[2],evt[3],evt[4])
 			end
 		end
 		
-		if not self:contains_point(evt[3],evt[4]) then
+		if not self:containsPoint(evt[3],evt[4]) then
 			return
 		end
 		
@@ -119,102 +125,103 @@ function Widget:on_event(evt)
 			if self.root then
 				self.root.focus = self
 			end
-			self:on_mouse_down(evt[2],evt[3],evt[4])
+			self:onMouseDown(evt[2],evt[3],evt[4])
 		elseif evt[1] == "mouse_scroll" then
-			self:on_mouse_scroll(evt[2],evt[3],evt[4])
+			self:onMouseScroll(evt[2],evt[3],evt[4])
 		end
 	elseif (not self.root) or ((self.root.focus == self) and contains(keybd_events,evt[1])) then
 		if evt[1] == "char" then
-			self:on_char(evt[2])
+			self:onCharTyped(evt[2])
 		elseif evt[1] == "key" then
-			self:on_key_down(evt[2],evt[3])
+			self:onKeyDown(evt[2],evt[3])
 		elseif evt[1] == "key_up" then
-			self:on_key_up(evt[2])
+			self:onKeyUp(evt[2])
 		elseif evt[1] == "paste" then
-			self:on_paste(evt[2])
+			self:onPaste(evt[2])
 		end
 	end
 end
 
 -- CONTAINER CLASSES
 
+-- Container: Base class for all widgets that can contain other widgets
 local Container = Widget:subclass()
 
-function Container:constructor(root)
-	Container.superClass.constructor(self,root)
+function Container:init(root)
+	Container.superClass.init(self,root)
 	self.children = {}
 end
 
-function Container:add_child(child,...)
+function Container:addChild(child,...)
 	table.insert(self.children,child)
 end
 
-function Container:on_redraw()
-	Container.superClass.on_redraw(self)
+function Container:onRedraw()
+	Container.superClass.onRedraw(self)
 	for _,widget in pairs(self.children) do
-		widget:on_redraw()
+		widget:onRedraw()
 	end
 end
 
 -- TODO: Change event system to respect layering
-function Container:on_event(evt)
-	Container.superClass.on_event(self,evt)
+function Container:onEvent(evt)
+	Container.superClass.onEvent(self,evt)
 	for _,widget in pairs(self.children) do
-		widget:on_event(evt)
+		widget:onEvent(evt)
 	end
 end
 
-function Container:on_layout()
-	Container.superClass.on_layout(self)
-	self:layout_children()
+function Container:onLayout()
+	Container.superClass.onLayout(self)
+	self:layoutChildren()
 	for _,widget in pairs(self.children) do
-		widget:on_layout()
+		widget:onLayout()
 	end
 end
 
-function Container:layout_children() end
+function Container:layoutChildren() end
 
-
+-- Root: The root widget of the user interface. Handles focus, resizing, and other events.
 local Root = Container:subclass()
 
-function Root:constructor()
-	Root.superClass.constructor(self,nil)
+function Root:init()
+	Root.superClass.init(self,nil)
 	self.focus = nil
 	self.size = {term.getSize()}
 	self.backgroundColor = colors.lightGray
 end
 
 function Root:show()
-	self:on_layout()
-	self:on_redraw()
+	self:onLayout()
+	self:onRedraw()
 end
 
-function Root:on_redraw()
-	Root.superClass.on_redraw(self)
+function Root:onRedraw()
+	Root.superClass.onRedraw(self)
 	if self.focus then
-		self.focus:focus_postrender()
+		self.focus:focusPostRender()
 	end
 end
 
-function Root:on_event(evt)
+function Root:onEvent(evt)
 	local focus = self.focus
-	Root.superClass.on_event(self,evt)
+	Root.superClass.onEvent(self,evt)
 	if evt[1] == "term_resize" then
 		self.size = {term.getSize()}
-		self:on_layout()
+		self:onLayout()
 	end
 	if self.focus ~= focus then
 		if focus then
-			focus:on_focus(false)
+			focus:onFocus(false)
 		end
 		if self.focus then
-			self.focus:on_focus(true)
+			self.focus:onFocus(true)
 		end
 	end
-	self:on_redraw()
+	self:onRedraw()
 end
 
-function Root:layout_children()
+function Root:layoutChildren()
 	for _,widget in pairs(self.children) do
 		widget.pos = {1,1}
 		widget.size = {self.size[1],self.size[2]}
@@ -226,94 +233,99 @@ function Root:render()
 	term.clear()
 end
 
+-- LinearContainer: Arranges child widgets in a horizontal or vertical line.
+--   Padding at the edges and spacing between widgets can be specified.
+--   Child widgets may be set to fill the major and/or minor axes of the container.
+--   If multiple widgets are set to fill the major axis
+--     then the free space will be evenly distributed between them.
 local LinearContainer = Container:subclass()
 
-function LinearContainer:constructor(root,axis,spacing,padding)
-	LinearContainer.superClass.constructor(self,root)
+function LinearContainer:init(root,axis,spacing,padding)
+	LinearContainer.superClass.init(self,root)
 	self.axis = axis
 	self.spacing = spacing
 	self.padding = padding
 end
 
-function LinearContainer:add_child(child,fill_major,fill_minor,align)
-	LinearContainer.superClass.add_child(self,child)
-	child.layout.fill_major = fill_major
-	child.layout.fill_minor = fill_minor
+function LinearContainer:addChild(child,fillMajor,fillMinor,align)
+	LinearContainer.superClass.addChild(self,child)
+	child.layout.fillMajor = fillMajor
+	child.layout.fillMinor = fillMinor
 	child.layout.align = align
 end
 
-function LinearContainer:get_minor_axis()
+function LinearContainer:getMinorAxis()
 	if self.axis == 1 then
 		return 2
 	end
 	return 1
 end
 
-function LinearContainer:get_preferred_size()
-	local axis2 = self:get_minor_axis()
+function LinearContainer:getPreferredSize()
+	local axis2 = self:getMinorAxis()
 	
-	local pref_size = {self.padding * 2,self.padding * 2}
+	local prefSize = {self.padding * 2,self.padding * 2}
 	for i=1,#self.children do
 		local child = self.children[i]
-		local c_pref_size = child:get_preferred_size()
-		pref_size[axis2] = math.max(pref_size[axis2],c_pref_size[axis2] + self.padding * 2)
-		pref_size[self.axis] = pref_size[self.axis] + c_pref_size[self.axis]
+		local c_prefSize = child:getPreferredSize()
+		prefSize[axis2] = math.max(prefSize[axis2],c_prefSize[axis2] + self.padding * 2)
+		prefSize[self.axis] = prefSize[self.axis] + c_prefSize[self.axis]
 		if i ~= #self.children then
-			pref_size[self.axis] = pref_size[self.axis] + self.spacing
+			prefSize[self.axis] = prefSize[self.axis] + self.spacing
 		end
 	end
 	
-	return pref_size
+	return prefSize
 end
 
-function LinearContainer:layout_children()
-	local axis2 = self:get_minor_axis()
+function LinearContainer:layoutChildren()
+	local axis2 = self:getMinorAxis()
 	
 	local space_free = self.size[self.axis] - self.padding * 2
-	local children_fill = 0
+	local childrenFill = 0
 	local preferred_sizes = {}
 	
 	for i=1,#self.children do
 		local child = self.children[i]
-		local pref_size = child:get_preferred_size()
-		table.insert(preferred_sizes, pref_size)
+		local prefSize = child:getPreferredSize()
+		table.insert(preferred_sizes, prefSize)
 		
-		if child.layout.fill_major then
-			children_fill = children_fill + 1
+		if child.layout.fillMajor then
+			childrenFill = childrenFill + 1
 		else
-			space_free = space_free - pref_size[self.axis]
+			space_free = space_free - prefSize[self.axis]
 		end
 		if i ~= #self.children then
 			space_free = space_free - self.spacing
 		end
 	end
 	
-	local current_pos = self.pos[self.axis] + self.padding
-	local fill_count = 0
+	local currentPos = self.pos[self.axis] + self.padding
+	local fillCount = 0
 	
 	for i=1,#self.children do
 		local child = self.children[i]
 		local size = 0
-		local pref_size = preferred_sizes[i]
+		local prefSize = preferred_sizes[i]
 		
-		if child.layout.fill_major then
-			fill_count = fill_count + 1
+		if child.layout.fillMajor then
+			fillCount = fillCount + 1
 			
-			size = math.max((math.floor(space_free * fill_count / children_fill)
-				- math.floor(space_free * (fill_count-1) / children_fill)),0)
+			size = math.max((math.floor(space_free * fillCount / childrenFill)
+				- math.floor(space_free * (fillCount-1) / childrenFill)),0)
 		else
-			size = pref_size[self.axis]
+			size = prefSize[self.axis]
 		end
 		
-		child.pos[self.axis] = current_pos
+		child.pos[self.axis] = currentPos
 		child.size[self.axis] = size
 		
 		local cell_size = self.size[axis2] - self.padding * 2
 		
-		if child.layout.fill_minor then
+		if child.layout.fillMinor then
 			child.size[axis2] = cell_size
 		else
-			child.size[axis2] = math.min(pref_size[axis2],cell_size)
+			child.size[axis2] = math.min(prefSize[axis2],cell_size)
 		end
 		
 		if child.layout.align == LinearAlign.CENTER then
@@ -324,7 +336,7 @@ function LinearContainer:layout_children()
 			child.pos[axis2] = self.pos[axis2]+self.size[axis2]-self.padding-child.size[axis2]
 		end
 		
-		current_pos = current_pos + size + self.spacing
+		currentPos = currentPos + size + self.spacing
 	end
 end
 
@@ -333,8 +345,8 @@ end
 -- A label. Can display custom text.
 local Label = Widget:subclass()
 
-function Label:constructor(root,text)
-	Label.superClass.constructor(self,root)
+function Label:init(root,text)
+	Label.superClass.init(self,root)
 	self.text = text
 	self.backgroundColor = colors.lightGray
 	self.textColor = colors.black
@@ -349,15 +361,15 @@ function Label:render()
 	end
 end
 
-function Label:get_preferred_size()
+function Label:getPreferredSize()
 	return {#self.text,1}
 end
 
--- Button. Can be pushed, and will trigger a custom on_pressed() callback.
+-- Button. Can be pushed, and will trigger a custom onPressed() callback.
 local Button = Widget:subclass()
 
-function Button:constructor(root,text)
-	Button.superClass.constructor(self,root)
+function Button:init(root,text)
+	Button.superClass.init(self,root)
 	self.text = text
 	self.color = colors.blue
 	self.pushedColor = colors.cyan
@@ -368,9 +380,9 @@ function Button:constructor(root,text)
 end
 
 -- ***Override this method on a Button instance to set behavior***
-function Button:on_pressed() end
+function Button:onPressed() end
 
-function Button:get_preferred_size()
+function Button:getPreferredSize()
 	return {#self.text+2,1}
 end
 
@@ -400,39 +412,39 @@ function Button:render()
 	end
 end
 
-function Button:on_mouse_down(btn,x,y)
+function Button:onMouseDown(btn,x,y)
 	if self.enabled then
 		self.held = true
 		self.dirty = true
 	end
 end
 
-function Button:on_mouse_up(btn,x,y)
+function Button:onMouseUp(btn,x,y)
 	if self.enabled then
 		self.held = false
 		self.dirty = true
-		if self:contains_point(x,y) then
-			self:on_pressed()
+		if self:containsPoint(x,y) then
+			self:onPressed()
 		end
 	end
 end
 
-function Button:on_key_down(key,held)
+function Button:onKeyDown(key,held)
 	if self.enabled and (not held) and (key == keys.space or key == keys.enter) then
 		self.held = true
 		self.dirty = true
 	end
 end
 
-function Button:on_key_up(key)
+function Button:onKeyUp(key)
 	if self.enabled and (key == keys.space or key == keys.enter) then
 		self.held = false
 		self.dirty = true
-		self:on_pressed()
+		self:onPressed()
 	end
 end
 
-function Button:on_focus(focused)
+function Button:onFocus(focused)
 	if self.enabled then
 		self.dirty = true
 	end
@@ -442,25 +454,25 @@ end
 TextField = Widget:subclass()
 
 -- TODO: Add auto-completion
-function TextField:constructor(root,length,text)
-	TextField.superClass.constructor(self,root)
+function TextField:init(root,length,text)
+	TextField.superClass.init(self,root)
 	
 	self.text = text
 	self.color = colors.white
 	self.textColor = colors.black
 	self.cursorColor = colors.lightGray
-	self.cursor_screen_pos = {0,0}
+	self.cursorScreenPos = {0,0}
 	self.char = #self.text
 	self.length = length
 	self.scroll = 0
 end
 
-function TextField:get_preferred_size()
+function TextField:getPreferredSize()
 	return {self.length,1}
 end
 
-function TextField:is_cursor_visible()
-	return (self.root.focus == self and self:contains_point(unpack(self.cursor_screen_pos)))
+function TextField:isCursorVisible()
+	return (self.root.focus == self and self:containsPoint(unpack(self.cursorScreenPos)))
 end
 
 function TextField:render()
@@ -477,10 +489,10 @@ function TextField:render()
 	term.setCursorPos(myX,myY)
 	term.write(string.sub(self.text,self.scroll+1,math.min(#self.text,self.scroll+self.size[1])))
 	
-	self.cursor_screen_pos = {myX+self.char-1-self.scroll,myY}
+	self.cursorScreenPos = {myX+self.char-1-self.scroll,myY}
 	
-	if self:is_cursor_visible() then
-		term.setCursorPos(unpack(self.cursor_screen_pos))
+	if self:isCursorVisible() then
+		term.setCursorPos(unpack(self.cursorScreenPos))
 		term.setBackgroundColor(self.cursorColor)
 		local chr = " "
 		if self.char <= #self.text then
@@ -490,8 +502,8 @@ function TextField:render()
 	end
 end
 
-function TextField:move_cursor(new_pos)
-	self.char = math.min(math.max(new_pos,1),#self.text+1)
+function TextField:moveCursor(newPos)
+	self.char = math.min(math.max(newPos,1),#self.text+1)
 	if self.char-self.scroll > self.size[1] then
 		self.scroll = self.char - self.size[1]
 	elseif self.char-self.scroll < 1 then
@@ -499,67 +511,67 @@ function TextField:move_cursor(new_pos)
 	end
 end
 
-function TextField:on_key_down(key,held)
+function TextField:onKeyDown(key,held)
 	if self.root.focus == self then
 		if key == keys.backspace then
 			self.text = string.sub(self.text,1,math.max(self.char-2,0)) .. string.sub(self.text,self.char,#self.text)
-			self:move_cursor(self.char-1)
+			self:moveCursor(self.char-1)
 		elseif key == keys.delete then
 			self.text = string.sub(self.text,1,math.max(self.char-1,0)) .. string.sub(self.text,self.char+1,#self.text)
 		elseif key == keys.home then
-			self:move_cursor(1)
+			self:moveCursor(1)
 		elseif key == keys['end'] then
-			self:move_cursor(#self.text+1)
+			self:moveCursor(#self.text+1)
 		elseif key == keys.left then
-			self:move_cursor(self.char-1)
+			self:moveCursor(self.char-1)
 		elseif key == keys.right then
-			self:move_cursor(self.char+1)
+			self:moveCursor(self.char+1)
 		end
 		self.dirty = true
 	end
 end
 
-function TextField:on_focus(focused)
+function TextField:onFocus(focused)
 	term.setCursorBlink(focused)
 	self.dirty = true
 end
 
-function TextField:focus_postrender()
-	if self:is_cursor_visible() then
-		term.setCursorPos(unpack(self.cursor_screen_pos))
+function TextField:focusPostRender()
+	if self:isCursorVisible() then
+		term.setCursorPos(unpack(self.cursorScreenPos))
 		term.setCursorBlink(true)
 	else
 		term.setCursorBlink(false)
 	end
 end
 
-function TextField:on_char(chr)
+function TextField:onCharTyped(chr)
 	if self.root.focus == self then
 		self.text = string.sub(self.text,1,self.char-1) .. chr .. string.sub(self.text,self.char,#self.text)
-		self:move_cursor(self.char + 1)
+		self:moveCursor(self.char + 1)
 		self.dirty = true
 	end
 end
 
-function TextField:on_paste(text)
+function TextField:onPaste(text)
 	if self.root.focus == self then
 		self.text = string.sub(self.text,1,self.char-1) .. text .. string.sub(self.text,self.char,#self.text)
-		self:move_cursor(self.char + #text)
+		self:moveCursor(self.char + #text)
 		self.dirty = true
 	end
 end
 
-function TextField:on_mouse_down(button, x, y)
-	self:select(x,y)
+function TextField:onMouseDown(button, x, y)
+	self:mouseSelect(x,y)
 end
 
-function TextField:on_mouse_drag(button, x, y)
-	self:select(x,y)
+function TextField:onMouseDrag(button, x, y)
+	self:mouseSelect(x,y)
 end
 
 -- TODO: Add area selection
-function TextField:select(x, y)
-	self:move_cursor(x - self.pos[1] + 1 + self.scroll)
+function TextField:mouseSelect(x, y)
+	self:moveCursor(x - self.pos[1] + 1 + self.scroll)
 	self.dirty = true
 end
 
@@ -568,19 +580,19 @@ end
 --		also allow wrapping to be disabled
 TextArea = Widget:subclass()
 
-function TextArea:constructor(root,rows,cols,text)
-	TextArea.superClass.constructor(self,root)
+function TextArea:init(root,cols,rows,text)
+	TextArea.superClass.init(self,root)
 	
 	self:setText(text)
 	self.color = colors.white
 	self.textColor = colors.black
 	self.rows = rows
 	self.cols = cols
-	self.cursor_screen_pos = {0,0}
+	self.cursorScreenPos = {0,0}
 	self.charX,self.charY = #self.text,1
 end
 
-function TextArea:get_preferred_size()
+function TextArea:getPreferredSize()
 	return {self.cols, self.rows}
 end
 
@@ -634,8 +646,8 @@ function TextArea:render()
 	end
 	--term.write(string.sub(self.text,1,math.min(#self.text,self.size[1])))
 	if self.root.focus == self then
-		self.cursor_screen_pos = {myX+(self.charX%self.size[1]-1),myY+lY+math.floor(self.charX/self.size[1])+self.charY-1}
-		term.setCursorPos(unpack(self.cursor_screen_pos))
+		self.cursorScreenPos = {myX+(self.charX%self.size[1]-1),myY+lY+math.floor(self.charX/self.size[1])+self.charY-1}
+		term.setCursorPos(unpack(self.cursorScreenPos))
 		term.setBackgroundColor(colors.lightGray)
 		local chr = " "
 		if self.charX <= #self.text[self.charY] then
@@ -647,7 +659,7 @@ function TextArea:render()
 end
 
 -- TODO: Add DELETE key, fix up/down behavior with wrapped strings
-function TextArea:on_key_down(key,held)
+function TextArea:onKeyDown(key,held)
 	if self.root.focus == self then
 		if key == keys.backspace then
 			if (self.charY > 1) and (self.charX == 1) then
@@ -706,16 +718,16 @@ function TextArea:on_key_down(key,held)
 	end
 end
 
-function TextArea:on_focus(focused)
+function TextArea:onFocus(focused)
 	term.setCursorBlink(focused)
 	self.dirty = true
 end
 
-function TextArea:focus_postrender()
-	term.setCursorPos(unpack(self.cursor_screen_pos)) 
+function TextArea:focusPostRender()
+	term.setCursorPos(unpack(self.cursorScreenPos)) 
 end
 
-function TextArea:on_char(chr)
+function TextArea:onCharTyped(chr)
 	if self.root.focus == self then
 		local text = self.text[self.charY]
 		self.text[self.charY] = string.sub(text,1,self.charX-1) .. chr .. string.sub(text,self.charX,#text)
@@ -724,7 +736,7 @@ function TextArea:on_char(chr)
 	end
 end
 
-function TextArea:on_paste(text)
+function TextArea:onPaste(text)
 	if self.root.focus == self then
 		local text_line = self.text[self.charY]
 		self.text[self.charY] = string.sub(text_line,1,self.charX-1) .. text .. string.sub(text_line,self.charX,#text_line)
@@ -733,17 +745,17 @@ function TextArea:on_paste(text)
 	end
 end
 
-function TextArea:on_mouse_down(button, x, y)
-	self:select(x,y)
+function TextArea:onMouseDown(button, x, y)
+	self:mouseSelect(x,y)
 end
 
-function TextArea:on_mouse_drag(button, x, y)
-	self:select(x,y)
+function TextArea:onMouseDrag(button, x, y)
+	self:mouseSelect(x,y)
 end
 
 -- TODO: Add area selection
 -- BUG: Off-by-one error, behaves wrongly when a line is exactly the widget width
-function TextArea:select(x, y)
+function TextArea:mouseSelect(x, y)
 	local myX,myY = self.pos[1],self.pos[2]
 	local t_y = 1
 	self.charY = 0
@@ -764,7 +776,121 @@ function TextArea:select(x, y)
 	self.dirty = true
 end
 
--- TODO: Add CheckBox, ListBox, ComboBox, ScrollBar, Slider, ScrollContainer, Image, TabContainer, MenuBar
+local ListBox = Widget:subclass()
+
+function ListBox:init(root,cols,rows,items)
+	ListBox.superClass.init(self,root)
+	self.items = items
+	self.cols = cols
+	self.rows = rows
+	self.scroll = 0
+	self.bgColor = colors.white
+	self.textColor = colors.black
+	self.selBgColor = colors.cyan
+	self.selTextColor = colors.white
+	self.selected = 0
+end
+
+function ListBox:getPreferredSize()
+	return {self.cols, self.rows}
+end
+
+function ListBox:render()
+	for i=1,self.size[2] do
+		term.setCursorPos(self.pos[1],self.pos[2]+i-1)
+		local optText = ""
+		local isOpt = false
+		local idx = i+self.scroll
+		
+		if idx>=1 and idx<=#self.items then
+			optText = string.sub(self.items[idx],1,self.size[1])
+			isOpt = true
+		end
+		
+		if isOpt and self.selected == idx then
+			term.setBackgroundColor(self.selBgColor)
+			term.setTextColor(self.selTextColor)
+		else
+			term.setBackgroundColor(self.bgColor)
+			term.setTextColor(self.textColor)
+		end
+		
+		term.write(optText..string.rep(" ",self.size[1]-#optText))
+	end
+end
+
+function ListBox:onLayout()
+	ListBox.superClass.onLayout(self)
+	self:setScroll(self.scroll)
+end
+
+-- Override this method to receive selection events
+function ListBox:on_selection_changed() end
+
+function ListBox:setSelected(n)
+	n = math.min(math.max(n,1),#self.items)
+	if self.selected ~= n then
+		self.selected = n
+		if self.scroll >= self.selected then
+			self:setScroll(self.selected - 1)
+		elseif self.scroll + self.size[2] < self.selected then
+			self:setScroll(self.selected - self.size[2])
+		end
+		self:on_selection_changed()
+	end
+end
+
+function ListBox:setScroll(scroll)
+	self.scroll = scroll
+	if self.scroll + self.size[2] > #self.items then
+		self.scroll = #self.items-self.size[2]
+	end
+	if self.scroll < 0 then
+		self.scroll = 0
+	end
+	self.dirty = true
+end
+
+function ListBox:mouseSelect(x,y)
+	self:setSelected(y-self.pos[2]+self.scroll+1)
+	self.dirty = true
+end
+
+function ListBox:onMouseDown(button, x, y)
+	self:mouseSelect(x,y)
+end
+
+function ListBox:onMouseScroll(dir, x, y)
+	self:setScroll(self.scroll+dir)
+end
+
+function ListBox:onMouseDrag(button, x, y)
+	self:mouseSelect(x,y)
+end
+
+function ListBox:onKeyDown(key,held)
+	if self.root.focus == self then
+		if key == keys.down then
+			self:setSelected(self.selected+1)
+		elseif key == keys.up then
+			self:setSelected(self.selected-1)
+		elseif key == keys.home then
+			self:setSelected(1)
+		elseif key == keys['end'] then
+			self:setSelected(#self.items)
+		elseif key == keys.pageUp then
+			self:setSelected(self.selected-(self.size[2]-1))
+		elseif key == keys.pageDown then
+			self:setSelected(self.selected+(self.size[2]-1))
+		end
+		self.dirty = true
+	end
+end
+
+-- TODO:
+-- Decide whether scrollbars should be part of ScrollWidgets or a separate widget
+-- Add BoxContainer, CheckBox, ComboBox, ScrollWidget, [ScrollBar,] Slider,
+-- 	ScrollContainer, Image, TabContainer, MenuBar
 
 local root = Root:new()
 local box = LinearContainer:new(root,2,1,1)
@@ -772,26 +898,28 @@ local box2 = LinearContainer:new(root,1,0,0)
 local lbl = Label:new(root,"Hello!")
 local btn1 = Button:new(root,"Button 1")
 local btn2 = Button:new(root,"Button 2")
-local area = TextArea:new(root,10,10,"Type text here")
-
+local area = ListBox:new(root,10,10,{})
+for i=1,15 do
+	table.insert(area.items,"Item "..tostring(i))
+end
 btn1.enabled = false
 
 --btn3.color = colors.cyan
 --btn3.pushedColor = colors.green
--- function btn1:on_pressed()
+-- function btn1:onPressed()
 	-- shell.run("worm")
 -- end
--- function btn2:on_pressed()
+-- function btn2:onPressed()
 	-- btn1.enabled = true
 	-- btn1.dirty = true
 --end
 
-root:add_child(box2)
-box2:add_child(area,true,true,LinearAlign.START)
-box2:add_child(box,false,true,LinearAlign.START)
-box:add_child(lbl,false,false,LinearAlign.START)
-box:add_child(btn1,true,false,LinearAlign.START)
-box:add_child(btn2,true,false,LinearAlign.START)
+root:addChild(box2)
+box2:addChild(area,true,true,LinearAlign.START)
+box2:addChild(box,false,true,LinearAlign.START)
+box:addChild(lbl,false,false,LinearAlign.START)
+box:addChild(btn1,true,false,LinearAlign.START)
+box:addChild(btn2,true,false,LinearAlign.START)
 
 root:show()
 --print(box.size[1],box.size[2])
@@ -799,5 +927,5 @@ root:show()
 --read()
 while true do
 	evt = {os.pullEvent()}
-	root:on_event(evt)
+	root:onEvent(evt)
 end
