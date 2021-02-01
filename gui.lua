@@ -496,6 +496,8 @@ function TextField:init(root,length,text)
 	self.scroll = 0
 end
 
+function TextField:onChanged() end
+
 function TextField:getPreferredSize()
 	return {self.length,1}
 end
@@ -544,8 +546,10 @@ function TextField:onKeyDown(key,held)
 	if key == keys.backspace then
 		self.text = string.sub(self.text,1,math.max(self.char-2,0)) .. string.sub(self.text,self.char,#self.text)
 		self:moveCursor(self.char-1)
+		self:onChanged()
 	elseif key == keys.delete then
 		self.text = string.sub(self.text,1,math.max(self.char-1,0)) .. string.sub(self.text,self.char+1,#self.text)
+		self:onChanged()
 	elseif key == keys.home then
 		self:moveCursor(1)
 	elseif key == keys['end'] then
@@ -579,6 +583,7 @@ function TextField:onCharTyped(chr)
 		self.text = string.sub(self.text,1,self.char-1) .. chr .. string.sub(self.text,self.char,#self.text)
 		self:moveCursor(self.char + 1)
 		self.dirty = true
+		self:onChanged()
 	end
 	return true
 end
@@ -588,6 +593,7 @@ function TextField:onPaste(text)
 		self.text = string.sub(self.text,1,self.char-1) .. text .. string.sub(self.text,self.char,#self.text)
 		self:moveCursor(self.char + #text)
 		self.dirty = true
+		self:onChanged()
 	end
 	return true
 end
@@ -814,6 +820,7 @@ local ScrollWidget = Widget:subclass()
 function ScrollWidget:init(root)
 	ScrollWidget.superClass.init(self,root)
 	self.scroll = 0
+	self.scrollSpeed = 3
 	self.scrollbar = nil
 end
 
@@ -823,22 +830,24 @@ function ScrollWidget:getMaxScroll()
 end
 
 function ScrollWidget:setScroll(scroll)
-	self.scroll = scroll
 	local maxScroll = self:getMaxScroll()
-	if self.scroll > maxScroll then
-		self.scroll = maxScroll
+	if scroll > maxScroll then
+		scroll = maxScroll
 	end
-	if self.scroll < 0 then
-		self.scroll = 0
+	if scroll < 0 then
+		scroll = 0
 	end
-	self.dirty = true
-	if self.scrollbar then
-		self.scrollbar.dirty = true
+	if self.scroll ~= scroll then
+		self.scroll = scroll
+		self.dirty = true
+		if self.scrollbar then
+			self.scrollbar.dirty = true
+		end
 	end
 end
 
 function ScrollWidget:onMouseScroll(dir, x, y)
-	self:setScroll(self.scroll+dir)
+	self:setScroll(self.scroll+dir*self.scrollSpeed)
 	return true
 end
 
@@ -893,7 +902,7 @@ function ListBox:onLayout()
 end
 
 -- Override this method to receive selection events
-function ListBox:on_selection_changed() end
+function ListBox:onSelectionChanged() end
 
 function ListBox:setSelected(n)
 	n = math.min(math.max(n,1),#self.items)
@@ -904,7 +913,7 @@ function ListBox:setSelected(n)
 		elseif self.scroll + self.size[2] < self.selected then
 			self:setScroll(self.selected - self.size[2])
 		end
-		self:on_selection_changed()
+		self:onSelectionChanged()
 	end
 end
 
@@ -1048,7 +1057,7 @@ function ScrollBar:render()
 end
 
 function ScrollBar:onMouseScroll(dir, x, y)
-	self.scrollWidget:setScroll(self.scrollWidget.scroll+dir)
+	self.scrollWidget:setScroll(self.scrollWidget.scroll+dir*self.scrollWidget.scrollSpeed)
 	return true
 end
 
