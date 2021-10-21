@@ -257,11 +257,26 @@ function Root:render()
 	term.clear()
 end
 
+function Root:mainLoop()
+	self:show()
+	while true do
+		evt = {os.pullEventRaw()}
+		self:onEvent(evt)
+        if evt[1] == "terminate" then
+            break
+        end
+	end
+    term.setBackgroundColor(colors.black)
+    term.setTextColor(colors.white)
+    term.setCursorPos(1,1)
+    term.clear()
+end
+
 -- LinearContainer: Arranges child widgets in a horizontal or vertical line.
 --   Padding at the edges and spacing between widgets can be specified.
 --   Child widgets may be set to fill the major and/or minor axes of the container.
 --   If multiple widgets are set to fill the major axis
---     then the free space will be evenly distributed between them.
+--	 then the free space will be evenly distributed between them.
 local LinearContainer = Container:subclass()
 
 function LinearContainer:init(root,axis,spacing,padding)
@@ -374,6 +389,7 @@ function Label:init(root,text)
 	self.text = text
 	self.backgroundColor = colors.lightGray
 	self.textColor = colors.black
+    self.length = 0
 end
 
 function Label:render()
@@ -386,7 +402,11 @@ function Label:render()
 end
 
 function Label:getPreferredSize()
-	return {#self.text,1}
+    if self.length > 0 then
+        return {self.length,1}
+    else
+        return {#self.text,1}
+    end
 end
 
 -- Button. Can be pushed, and will trigger a custom onPressed() callback.
@@ -1112,46 +1132,10 @@ end
 -- Add BoxContainer, CheckBox, ComboBox, Slider,
 -- 	ScrollContainer, Image, TabContainer, MenuBar
 
-local root = Root:new()
-local box = LinearContainer:new(root,2,1,1)
-local box2 = LinearContainer:new(root,1,0,0)
-local lbl = Label:new(root,"Hello!")
-local btn1 = Button:new(root,"Button 1")
-local btn2 = Button:new(root,"Button 2")
-local area = ListBox:new(root,10,10,{})
-local sb = ScrollBar:new(root,area)
---local btn3 = Button:new(root,"Button 3")
---btn3.pos = {20,10}
---btn3.size = {10,3}
-for i=1,64 do
-	table.insert(area.items,"Item "..tostring(i))
-end
-btn1.enabled = false
-
---btn3.color = colors.cyan
---btn3.pushedColor = colors.green
--- function btn1:onPressed()
-	-- shell.run("worm")
--- end
--- function btn2:onPressed()
-	-- btn1.enabled = true
-	-- btn1.dirty = true
---end
-
-root:addChild(box2)
---root:addChild(btn3)
-box2:addChild(area,true,true,LinearAlign.START)
-box2:addChild(sb,false,true,LinearAlign.START)
-box2:addChild(box,false,true,LinearAlign.START)
-box:addChild(lbl,false,false,LinearAlign.START)
-box:addChild(btn1,true,false,LinearAlign.START)
-box:addChild(btn2,true,false,LinearAlign.START)
-
-root:show()
---print(box.size[1],box.size[2])
---print(btn.size[1],btn.size[2])
---read()
-while true do
-	evt = {os.pullEvent()}
-	root:onEvent(evt)
-end
+-- TODO: Improve this interface
+local gui = {SpecialChars=SpecialChars,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
+	Object=Object,Widget=Widget,Container=Container,Root=Root,
+	LinearContainer=LinearContainer,Label=Label,Button=Button,
+	TextField=TextField,TextArea=TextArea,ScrollWidget=ScrollWidget,
+	ListBox=ListBox,ScrollBar=ScrollBar}
+return gui
