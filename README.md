@@ -10,4 +10,10 @@ This is a basic GUI toolkit for CC:Tweaked. Currently, the widgets include:
 * ListBox
 * ScrollBar
 
+The library can be installed from pastebin:
+
+```
+pastebin get WpnbkREi gui.lua
+```
+
 Documentation is currently unfinished. See `demo.lua` for a usage example.
