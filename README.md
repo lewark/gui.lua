@@ -1,3 +1,5 @@
+![Screenshot](https://github.com/knector01/gui.lua/blob/master/gui-screenshot.png?raw=true)
+
 # gui.lua
 
 This is a basic GUI toolkit for CC:Tweaked. Currently, the widgets include:
