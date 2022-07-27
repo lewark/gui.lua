@@ -18,4 +18,4 @@ The library can be installed from pastebin:
 pastebin get WpnbkREi gui.lua
 ```
 
-Documentation is currently unfinished. See `demo.lua` for a usage example.
+Documentation is currently unfinished. See `demo.lua` for a usage example. Or look at [inv.lua](https://github.com/knector01/inv.lua) to see it used in an actual program.
