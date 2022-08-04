@@ -1,5 +1,7 @@
 -- gui.lua: GUI toolkit for ComputerCraft
 
+local expect = require "cc.expect"
+
 local top_events = {"mouse_click","mouse_scroll"}
 local focus_events = {"mouse_up","mouse_drag","char","key","key_up","paste"}
 
@@ -42,6 +44,7 @@ function Object:subclass()
 end
 
 function Object:instanceof(class)
+    expect(1, class, "table")
     local c = self.class
     while c ~= nil do
         if c == class then
@@ -64,6 +67,7 @@ function Object:init(...) end
 local Widget = Object:subclass()
 
 function Widget:init(root)
+    expect(1, root, "table", "nil")
     self.size = {0,0}
     self.pos = {1,1}
     self.layout = {}
@@ -73,6 +77,8 @@ function Widget:init(root)
 end
 
 function Widget:containsPoint(x,y)
+    expect(1, x, "number")
+    expect(2, y, "number")
     return (
         x >= self.pos[1] and 
         x < self.pos[1]+self.size[1] and 
@@ -117,6 +123,7 @@ function Widget:onFocus(focused) return true end
 -- return true from an event callback to consume the event
 -- (mainly useful for mouse_click and mouse_scroll)
 function Widget:onEvent(evt)
+    expect(1, evt, "table")
     if evt[1] == "mouse_drag" then
         return self:onMouseDrag(evt[2],evt[3],evt[4])
     elseif evt[1] == "mouse_up" then
@@ -146,11 +153,13 @@ end
 local Container = Widget:subclass()
 
 function Container:init(root)
+    expect(1, root, "table", "nil")
     Container.superClass.init(self,root)
     self.children = {}
 end
 
 function Container:addChild(child,...)
+    expect(1, child, "table")
     table.insert(self.children,child)
 end
 
@@ -162,6 +171,7 @@ function Container:onRedraw()
 end
 
 function Container:onEvent(evt)
+    expect(1, evt, "table")
     local ret = Container.superClass.onEvent(self,evt)
     if contains(top_events,evt[1]) then
         for i=#self.children,1,-1 do
@@ -214,6 +224,7 @@ function Root:onRedraw()
 end
 
 function Root:onEvent(evt)
+    expect(1, evt, "table")
     local focus = self.focus
     local ret = Root.superClass.onEvent(self,evt)
     
@@ -280,6 +291,10 @@ end
 local LinearContainer = Container:subclass()
 
 function LinearContainer:init(root,axis,spacing,padding)
+    expect(1, root, "table")
+    expect(2, axis, "number")
+    expect(3, spacing, "number")
+    expect(4, padding, "number")
     LinearContainer.superClass.init(self,root)
     self.axis = axis
     self.spacing = spacing
@@ -287,6 +302,10 @@ function LinearContainer:init(root,axis,spacing,padding)
 end
 
 function LinearContainer:addChild(child,fillMajor,fillMinor,align)
+    expect(1, child, "table")
+    expect(2, fillMajor, "boolean")
+    expect(3, fillMinor, "boolean")
+    expect(4, align, "number")
     LinearContainer.superClass.addChild(self,child)
     child.layout.fillMajor = fillMajor
     child.layout.fillMinor = fillMinor
@@ -385,6 +404,8 @@ end
 local Label = Widget:subclass()
 
 function Label:init(root,text)
+    expect(1, root, "table")
+    expect(2, text, "string")
     Label.superClass.init(self,root)
     self.text = text
     self.backgroundColor = colors.lightGray
@@ -413,6 +434,8 @@ end
 local Button = Widget:subclass()
 
 function Button:init(root,text)
+    expect(1, root, "table")
+    expect(2, text, "string")
     Button.superClass.init(self,root)
     self.text = text
     self.color = colors.blue
@@ -504,6 +527,9 @@ TextField = Widget:subclass()
 
 -- TODO: Add auto-completion
 function TextField:init(root,length,text)
+    expect(1, root, "table")
+    expect(2, length, "number")
+    expect(3, text, "string")
     TextField.superClass.init(self,root)
     
     self.text = text
@@ -554,6 +580,7 @@ function TextField:render()
 end
 
 function TextField:moveCursor(newPos)
+    expect(1, newPos, "number")
     self.char = math.min(math.max(newPos,1),#self.text+1)
     if self.char-self.scroll > self.size[1] then
         self.scroll = self.char - self.size[1]
@@ -630,6 +657,8 @@ end
 
 -- TODO: Add area selection
 function TextField:mouseSelect(x, y)
+    expect(1, x, "number")
+    expect(2, y, "number")
     self:moveCursor(x - self.pos[1] + 1 + self.scroll)
     self.dirty = true
 end
@@ -640,6 +669,10 @@ end
 TextArea = Widget:subclass()
 
 function TextArea:init(root,cols,rows,text)
+    expect(1, root, "table")
+    expect(2, cols, "number")
+    expect(3, rows, "number")
+    expect(4, text, "string")
     TextArea.superClass.init(self,root)
     
     self:setText(text)
@@ -657,6 +690,7 @@ end
 
 -- BUG: double newlines are combined
 function TextArea:setText(text)
+    expect(1, text, "string")
     self.text = {}
     for line in text:gmatch("[^\r?\n]+") do
         table.insert(self.text,line)
@@ -815,6 +849,8 @@ end
 -- TODO: Add area selection
 -- BUG: Off-by-one error, behaves wrongly when a line is exactly the widget width
 function TextArea:mouseSelect(x, y)
+    expect(1, x, "number")
+    expect(2, y, "number")
     local myX,myY = self.pos[1],self.pos[2]
     local t_y = 1
     self.charY = 0
@@ -838,6 +874,7 @@ end
 local ScrollWidget = Widget:subclass()
 
 function ScrollWidget:init(root)
+    expect(1, root, "table")
     ScrollWidget.superClass.init(self,root)
     self.scroll = 0
     self.scrollSpeed = 3
@@ -850,6 +887,7 @@ function ScrollWidget:getMaxScroll()
 end
 
 function ScrollWidget:setScroll(scroll)
+    expect(1, scroll, "number")
     local maxScroll = self:getMaxScroll()
     if scroll > maxScroll then
         scroll = maxScroll
@@ -877,6 +915,10 @@ end
 local ListBox = ScrollWidget:subclass()
 
 function ListBox:init(root,cols,rows,items)
+    expect(1, root, "table")
+    expect(2, cols, "number")
+    expect(3, rows, "number")
+    expect(4, items, "table")
     ListBox.superClass.init(self,root)
     self.items = items
     self.cols = cols
@@ -925,6 +967,7 @@ end
 function ListBox:onSelectionChanged() end
 
 function ListBox:setSelected(n)
+    expect(1, n, "number")
     n = math.min(math.max(n,1),#self.items)
     if self.selected ~= n then
         self.selected = n
@@ -942,6 +985,8 @@ function ListBox:getMaxScroll()
 end
 
 function ListBox:mouseSelect(x,y)
+    expect(1, x, "number")
+    expect(2, y, "number")
     self:setSelected(y-self.pos[2]+self.scroll+1)
     self.dirty = true
 end
@@ -979,6 +1024,8 @@ local ScrollBar = Widget:subclass()
 
 -- todo: add horizontal scrollbars
 function ScrollBar:init(root,scrollWidget)
+    expect(1, root, "table")
+    expect(2, scrollWidget, "table")
     ScrollBar.superClass.init(self,root)
     self.scrollWidget = scrollWidget
     scrollWidget.scrollbar = self
