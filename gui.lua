@@ -13,6 +13,8 @@ local SpecialChars = {
 local LinearAlign = {CENTER=0,START=1,END=2}
 local BoxAlign = {CENTER=0,TOP=1,BOTTOM=2,LEFT=3,RIGHT=4}
 
+local gui = {}
+
 local function startswith(str,substr)
     return string.sub(str,1,#substr) == substr
 end
@@ -22,6 +24,37 @@ local function contains(tbl,val)
         if v == val then return true end
     end
     return false
+end
+
+local function getClassName(class)
+    for k,v in pairs(gui) do
+        if v == class then
+            return k
+        end
+    end
+    return nil
+end
+
+local function expectClass(index, value, class, allowNil)
+    local valType = type(value)
+    
+    if type(value) == "table" then
+        if value.class then
+            if value:instanceof(class) then
+                return value
+            end
+            
+            valType = getClassName(value.class)
+        end
+    elseif value == nil then
+        if allowNil then
+            return value
+        end
+    end
+
+    local desiredName = getClassName(class)
+    -- TODO: include method name in error
+    error("bad argument #"..index.." (expected "..desiredName..", got "..valType..")",3)
 end
 
 -- OBJECT CLASS
@@ -67,7 +100,7 @@ function Object:init(...) end
 local Widget = Object:subclass()
 
 function Widget:init(root)
-    expect(1, root, "table", "nil")
+    expectClass(1, root, Widget, true)
     self.size = {0,0}
     self.pos = {1,1}
     self.layout = {}
@@ -153,7 +186,7 @@ end
 local Container = Widget:subclass()
 
 function Container:init(root)
-    expect(1, root, "table", "nil")
+    expectClass(1, root, Widget, true)
     Container.superClass.init(self,root)
     self.children = {}
 end
@@ -291,7 +324,7 @@ end
 local LinearContainer = Container:subclass()
 
 function LinearContainer:init(root,axis,spacing,padding)
-    expect(1, root, "table")
+    expectClass(1, root, Widget)
     expect(2, axis, "number")
     expect(3, spacing, "number")
     expect(4, padding, "number")
@@ -302,7 +335,7 @@ function LinearContainer:init(root,axis,spacing,padding)
 end
 
 function LinearContainer:addChild(child,fillMajor,fillMinor,align)
-    expect(1, child, "table")
+    expectClass(1, child, Widget)
     expect(2, fillMajor, "boolean")
     expect(3, fillMinor, "boolean")
     expect(4, align, "number")
@@ -404,7 +437,7 @@ end
 local Label = Widget:subclass()
 
 function Label:init(root,text)
-    expect(1, root, "table")
+    expectClass(1, root, Widget)
     expect(2, text, "string")
     Label.superClass.init(self,root)
     self.text = text
@@ -434,7 +467,7 @@ end
 local Button = Widget:subclass()
 
 function Button:init(root,text)
-    expect(1, root, "table")
+    expectClass(1, root, Widget)
     expect(2, text, "string")
     Button.superClass.init(self,root)
     self.text = text
@@ -527,7 +560,7 @@ TextField = Widget:subclass()
 
 -- TODO: Add auto-completion
 function TextField:init(root,length,text)
-    expect(1, root, "table")
+    expectClass(1, root, Widget)
     expect(2, length, "number")
     expect(3, text, "string")
     TextField.superClass.init(self,root)
@@ -669,7 +702,7 @@ end
 TextArea = Widget:subclass()
 
 function TextArea:init(root,cols,rows,text)
-    expect(1, root, "table")
+    expectClass(1, root, Widget)
     expect(2, cols, "number")
     expect(3, rows, "number")
     expect(4, text, "string")
@@ -874,7 +907,7 @@ end
 local ScrollWidget = Widget:subclass()
 
 function ScrollWidget:init(root)
-    expect(1, root, "table")
+    expectClass(1, root, Widget)
     ScrollWidget.superClass.init(self,root)
     self.scroll = 0
     self.scrollSpeed = 3
@@ -915,7 +948,7 @@ end
 local ListBox = ScrollWidget:subclass()
 
 function ListBox:init(root,cols,rows,items)
-    expect(1, root, "table")
+    expectClass(1, root, Widget)
     expect(2, cols, "number")
     expect(3, rows, "number")
     expect(4, items, "table")
@@ -1024,8 +1057,8 @@ local ScrollBar = Widget:subclass()
 
 -- todo: add horizontal scrollbars
 function ScrollBar:init(root,scrollWidget)
-    expect(1, root, "table")
-    expect(2, scrollWidget, "table")
+    expectClass(1, root, Widget)
+    expectClass(2, scrollWidget, ScrollWidget)
     ScrollBar.superClass.init(self,root)
     self.scrollWidget = scrollWidget
     scrollWidget.scrollbar = self
@@ -1180,7 +1213,7 @@ end
 --     ScrollContainer, Image, TabContainer, MenuBar
 
 -- TODO: Improve this interface
-local gui = {SpecialChars=SpecialChars,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
+gui = {SpecialChars=SpecialChars,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
     Object=Object,Widget=Widget,Container=Container,Root=Root,
     LinearContainer=LinearContainer,Label=Label,Button=Button,
     TextField=TextField,TextArea=TextArea,ScrollWidget=ScrollWidget,
