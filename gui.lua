@@ -53,8 +53,14 @@ local function expectClass(index, value, class, allowNil)
     end
 
     local desiredName = getClassName(class)
-    -- TODO: include method name in error
-    error("bad argument #"..index.." (expected "..desiredName..", got "..valType..")",3)
+    
+    local info = debug.getinfo(2,"n")
+    
+    if info then
+        error("bad argument #"..index.." to '"..info.name.."' (expected "..desiredName..", got "..valType..")",3)
+    else
+        error("bad argument #"..index.." (expected "..desiredName..", got "..valType..")",3)
+    end
 end
 
 -- OBJECT CLASS
