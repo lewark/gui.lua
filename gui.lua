@@ -1,7 +1,5 @@
 -- gui.lua: GUI toolkit for ComputerCraft
 
-local expect = require "cc.expect"
-
 local top_events = {"mouse_click","mouse_scroll"}
 local focus_events = {"mouse_up","mouse_drag","char","key","key_up","paste"}
 
@@ -35,8 +33,28 @@ local function getClassName(class)
     return nil
 end
 
-local function expectClass(index, value, class, allowNil)
+local function expectType(index, value, expType, offset)
     local valType = type(value)
+    -- use offset=1 in init() so that error propagates up to new() calls
+    offset = offset or 0
+    
+    if valType == expType then
+        return value
+    end
+
+    local info = debug.getinfo(2+offset,"n")
+    
+    if info then
+        error("bad argument #"..index.." to '"..info.name.."' (expected "..expType..", got "..valType..")",3+offset)
+    else
+        error("bad argument #"..index.." (expected "..expType..", got "..valType..")",3+offset)
+    end
+end
+
+local function expectClass(index, value, class, allowNil, offset)
+    local valType = type(value)
+    -- use offset=1 in init() so that error propagates up to new() calls
+    offset = offset or 0
     
     if type(value) == "table" then
         if value.class then
@@ -46,20 +64,18 @@ local function expectClass(index, value, class, allowNil)
             
             valType = getClassName(value.class)
         end
-    elseif value == nil then
-        if allowNil then
-            return value
-        end
+    elseif (value == nil) and allowNil then
+        return value
     end
 
     local desiredName = getClassName(class)
     
-    local info = debug.getinfo(2,"n")
+    local info = debug.getinfo(2+offset,"n")
     
     if info then
-        error("bad argument #"..index.." to '"..info.name.."' (expected "..desiredName..", got "..valType..")",3)
+        error("bad argument #"..index.." to '"..info.name.."' (expected "..desiredName..", got "..valType..")",3+offset)
     else
-        error("bad argument #"..index.." (expected "..desiredName..", got "..valType..")",3)
+        error("bad argument #"..index.." (expected "..desiredName..", got "..valType..")",3+offset)
     end
 end
 
@@ -83,7 +99,7 @@ function Object:subclass()
 end
 
 function Object:instanceof(class)
-    expect(1, class, "table")
+    expectType(1, class, "table")
     local c = self.class
     while c ~= nil do
         if c == class then
@@ -106,7 +122,7 @@ function Object:init(...) end
 local Widget = Object:subclass()
 
 function Widget:init(root)
-    expectClass(1, root, Widget, true)
+    expectClass(1, root, Widget, true, 1)
     self.size = {0,0}
     self.pos = {1,1}
     self.layout = {}
@@ -116,8 +132,8 @@ function Widget:init(root)
 end
 
 function Widget:containsPoint(x,y)
-    expect(1, x, "number")
-    expect(2, y, "number")
+    expectType(1, x, "number")
+    expectType(2, y, "number")
     return (
         x >= self.pos[1] and 
         x < self.pos[1]+self.size[1] and 
@@ -162,7 +178,7 @@ function Widget:onFocus(focused) return true end
 -- return true from an event callback to consume the event
 -- (mainly useful for mouse_click and mouse_scroll)
 function Widget:onEvent(evt)
-    expect(1, evt, "table")
+    expectType(1, evt, "table")
     if evt[1] == "mouse_drag" then
         return self:onMouseDrag(evt[2],evt[3],evt[4])
     elseif evt[1] == "mouse_up" then
@@ -192,13 +208,13 @@ end
 local Container = Widget:subclass()
 
 function Container:init(root)
-    expectClass(1, root, Widget, true)
+    expectClass(1, root, Widget, true, 1)
     Container.superClass.init(self,root)
     self.children = {}
 end
 
 function Container:addChild(child,...)
-    expect(1, child, "table")
+    expectClass(1, child, Widget)
     table.insert(self.children,child)
 end
 
@@ -210,7 +226,7 @@ function Container:onRedraw()
 end
 
 function Container:onEvent(evt)
-    expect(1, evt, "table")
+    expectType(1, evt, "table")
     local ret = Container.superClass.onEvent(self,evt)
     if contains(top_events,evt[1]) then
         for i=#self.children,1,-1 do
@@ -263,7 +279,7 @@ function Root:onRedraw()
 end
 
 function Root:onEvent(evt)
-    expect(1, evt, "table")
+    expectType(1, evt, "table")
     local focus = self.focus
     local ret = Root.superClass.onEvent(self,evt)
     
@@ -330,10 +346,10 @@ end
 local LinearContainer = Container:subclass()
 
 function LinearContainer:init(root,axis,spacing,padding)
-    expectClass(1, root, Widget)
-    expect(2, axis, "number")
-    expect(3, spacing, "number")
-    expect(4, padding, "number")
+    expectClass(1, root, Widget, false, 1)
+    expectType(2, axis, "number", 1)
+    expectType(3, spacing, "number", 1)
+    expectType(4, padding, "number", 1)
     LinearContainer.superClass.init(self,root)
     self.axis = axis
     self.spacing = spacing
@@ -342,9 +358,9 @@ end
 
 function LinearContainer:addChild(child,fillMajor,fillMinor,align)
     expectClass(1, child, Widget)
-    expect(2, fillMajor, "boolean")
-    expect(3, fillMinor, "boolean")
-    expect(4, align, "number")
+    expectType(2, fillMajor, "boolean")
+    expectType(3, fillMinor, "boolean")
+    expectType(4, align, "number")
     LinearContainer.superClass.addChild(self,child)
     child.layout.fillMajor = fillMajor
     child.layout.fillMinor = fillMinor
@@ -443,8 +459,8 @@ end
 local Label = Widget:subclass()
 
 function Label:init(root,text)
-    expectClass(1, root, Widget)
-    expect(2, text, "string")
+    expectClass(1, root, Widget, false, 1)
+    expectType(2, text, "string", 1)
     Label.superClass.init(self,root)
     self.text = text
     self.backgroundColor = colors.lightGray
@@ -473,8 +489,8 @@ end
 local Button = Widget:subclass()
 
 function Button:init(root,text)
-    expectClass(1, root, Widget)
-    expect(2, text, "string")
+    expectClass(1, root, Widget, false, 1)
+    expectType(2, text, "string", 1)
     Button.superClass.init(self,root)
     self.text = text
     self.color = colors.blue
@@ -566,9 +582,9 @@ TextField = Widget:subclass()
 
 -- TODO: Add auto-completion
 function TextField:init(root,length,text)
-    expectClass(1, root, Widget)
-    expect(2, length, "number")
-    expect(3, text, "string")
+    expectClass(1, root, Widget, false, 1)
+    expectType(2, length, "number", 1)
+    expectType(3, text, "string", 1)
     TextField.superClass.init(self,root)
     
     self.text = text
@@ -619,7 +635,7 @@ function TextField:render()
 end
 
 function TextField:moveCursor(newPos)
-    expect(1, newPos, "number")
+    expectType(1, newPos, "number")
     self.char = math.min(math.max(newPos,1),#self.text+1)
     if self.char-self.scroll > self.size[1] then
         self.scroll = self.char - self.size[1]
@@ -696,8 +712,8 @@ end
 
 -- TODO: Add area selection
 function TextField:mouseSelect(x, y)
-    expect(1, x, "number")
-    expect(2, y, "number")
+    expectType(1, x, "number")
+    expectType(2, y, "number")
     self:moveCursor(x - self.pos[1] + 1 + self.scroll)
     self.dirty = true
 end
@@ -708,10 +724,10 @@ end
 TextArea = Widget:subclass()
 
 function TextArea:init(root,cols,rows,text)
-    expectClass(1, root, Widget)
-    expect(2, cols, "number")
-    expect(3, rows, "number")
-    expect(4, text, "string")
+    expectClass(1, root, Widget, false, 1)
+    expectType(2, cols, "number", 1)
+    expectType(3, rows, "number", 1)
+    expectType(4, text, "string", 1)
     TextArea.superClass.init(self,root)
     
     self:setText(text)
@@ -729,7 +745,7 @@ end
 
 -- BUG: double newlines are combined
 function TextArea:setText(text)
-    expect(1, text, "string")
+    expectType(1, text, "string")
     self.text = {}
     for line in text:gmatch("[^\r?\n]+") do
         table.insert(self.text,line)
@@ -888,8 +904,8 @@ end
 -- TODO: Add area selection
 -- BUG: Off-by-one error, behaves wrongly when a line is exactly the widget width
 function TextArea:mouseSelect(x, y)
-    expect(1, x, "number")
-    expect(2, y, "number")
+    expectType(1, x, "number")
+    expectType(2, y, "number")
     local myX,myY = self.pos[1],self.pos[2]
     local t_y = 1
     self.charY = 0
@@ -913,7 +929,7 @@ end
 local ScrollWidget = Widget:subclass()
 
 function ScrollWidget:init(root)
-    expectClass(1, root, Widget)
+    expectClass(1, root, Widget, false, 1)
     ScrollWidget.superClass.init(self,root)
     self.scroll = 0
     self.scrollSpeed = 3
@@ -926,7 +942,7 @@ function ScrollWidget:getMaxScroll()
 end
 
 function ScrollWidget:setScroll(scroll)
-    expect(1, scroll, "number")
+    expectType(1, scroll, "number")
     local maxScroll = self:getMaxScroll()
     if scroll > maxScroll then
         scroll = maxScroll
@@ -954,10 +970,10 @@ end
 local ListBox = ScrollWidget:subclass()
 
 function ListBox:init(root,cols,rows,items)
-    expectClass(1, root, Widget)
-    expect(2, cols, "number")
-    expect(3, rows, "number")
-    expect(4, items, "table")
+    expectClass(1, root, Widget, false, 1)
+    expectType(2, cols, "number", 1)
+    expectType(3, rows, "number", 1)
+    expectType(4, items, "table", 1)
     ListBox.superClass.init(self,root)
     self.items = items
     self.cols = cols
@@ -1006,7 +1022,7 @@ end
 function ListBox:onSelectionChanged() end
 
 function ListBox:setSelected(n)
-    expect(1, n, "number")
+    expectType(1, n, "number")
     n = math.min(math.max(n,1),#self.items)
     if self.selected ~= n then
         self.selected = n
@@ -1024,8 +1040,8 @@ function ListBox:getMaxScroll()
 end
 
 function ListBox:mouseSelect(x,y)
-    expect(1, x, "number")
-    expect(2, y, "number")
+    expectType(1, x, "number")
+    expectType(2, y, "number")
     self:setSelected(y-self.pos[2]+self.scroll+1)
     self.dirty = true
 end
@@ -1063,8 +1079,8 @@ local ScrollBar = Widget:subclass()
 
 -- todo: add horizontal scrollbars
 function ScrollBar:init(root,scrollWidget)
-    expectClass(1, root, Widget)
-    expectClass(2, scrollWidget, ScrollWidget)
+    expectClass(1, root, Widget, false, 1)
+    expectClass(2, scrollWidget, ScrollWidget, false, 1)
     ScrollBar.superClass.init(self,root)
     self.scrollWidget = scrollWidget
     scrollWidget.scrollbar = self
