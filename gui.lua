@@ -5,6 +5,8 @@ local expect = require "cc.expect"
 local top_events = {"mouse_click","mouse_scroll"}
 local focus_events = {"mouse_up","mouse_drag","char","key","key_up","paste"}
 
+local object = require "object"
+
 local SpecialChars = {
     MINIMIZE=22,MAXIMIZE=23,STRIPES=127,
     TRI_RIGHT=16,TRI_LEFT=17,TRI_UP=30,TRI_DOWN=31,
@@ -23,44 +25,6 @@ local function contains(tbl,val)
     end
     return false
 end
-
--- OBJECT CLASS
--- Implements basic inheritance features.
-
-local Object = {}
-
--- Call new() to create an instance of any class.
--- Do not override this method. It will call the class's init() for you.
-function Object:new(...)
-    local instance = setmetatable({},{__index=self})
-    instance.class = self
-    instance:init(...)
-    return instance
-end
-
--- Call subclass() to create a subclass of an existing class.
-function Object:subclass()
-    return setmetatable({superClass=self},{__index=self})
-end
-
-function Object:instanceof(class)
-    expect(1, class, "table")
-    local c = self.class
-    while c ~= nil do
-        if c == class then
-            return true
-        end
-        c = c.superClass
-    end
-    return false
-end
-
--- The object's constructor. Override this method to initialize an Object subclass.
--- init() parameters will be passed in from new().
--- An object's init() may also call its super class's init() if desired.
---   Use ClassName.superClass.init(self,...)
--- This method should only be called from within new() or a subclass's init().
-function Object:init(...) end
 
 -- WIDGET CLASSES
 
