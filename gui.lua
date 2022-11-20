@@ -12,8 +12,17 @@ local SpecialChars = {
     TRI_RIGHT=16,TRI_LEFT=17,TRI_UP=30,TRI_DOWN=31,
     ARROW_UP=24,ARROW_DOWN=25,ARROW_RIGHT=26,ARROW_LEFT=27,ARROW_LR=29,ARROW_UD=18
 }
+
+-- Enum used to specify layouts within LinearContainers.
+-- - LinearAxis.HORIZONTAL: X axis
+-- - LinearAxis.VERTICAL: Y axis
 local LinearAxis = {HORIZONTAL=1,VERTICAL=2}
+-- Enum used to specify layouts within LinearContainers.
+-- - LinearAxis.CENTER: center the widget within its cell
+-- - LinearAxis.START: align the widget to the top (HORIZONTAL container) or left (VERTICAL) of its cell
+-- - LinearAxis.END: align the widget to the bottom (HORIZONTAL container) or right (VERTICAL) of its cell
 local LinearAlign = {CENTER=0,START=1,END=2}
+-- Currently unused.
 local BoxAlign = {CENTER=0,TOP=1,BOTTOM=2,LEFT=3,RIGHT=4}
 
 local function startswith(str,substr)
@@ -31,6 +40,9 @@ end
 
 local Widget = Object:subclass()
 
+-- Widget constructor. This should not be called directly except by new() and subclasses.
+-- To instantiate a widget for a GUI use [class name]:new(...), which creates
+-- the object and passes the arguments to its init method.
 function Widget:init(root)
     expect(1, root, "table", "nil")
     self.size = {0,0}
@@ -41,6 +53,7 @@ function Widget:init(root)
     self.root = root
 end
 
+-- Returns true if the coordinates x, y are within the widget's bounding box. 
 function Widget:containsPoint(x,y)
     expect(1, x, "number")
     expect(2, y, "number")
@@ -52,6 +65,7 @@ function Widget:containsPoint(x,y)
     )
 end
 
+-- Event handler called when the GUI is repainted. 
 function Widget:onRedraw()
     if self.dirty then
         self:render()
@@ -59,10 +73,12 @@ function Widget:onRedraw()
     end
 end
 
+-- Event handler called when the widget's layout is updated. 
 function Widget:onLayout()
     self.dirty = true
 end
 
+-- Returns the widget's preferred minimum size.
 function Widget:getPreferredSize()
     return {0, 0}
 end
@@ -72,21 +88,30 @@ function Widget:render() end
 -- Post-render callback for focused widget. Used to position text field cursor.
 function Widget:focusPostRender() end
 
--- Widget event handlers. Override these to provide custom behavior
+-- Event handler called when a key is pressed or held and the widget is in focus.
 function Widget:onKeyDown(key,held) return true end
+-- Event handler called when a key is released and the widget is in focus.
 function Widget:onKeyUp(key) return true end
+-- Event handler called when a character is typed and the widget is in focus.
 function Widget:onCharTyped(chr) return true end
+-- Event handler called when text is pasted and the widget is in focus.
 function Widget:onPaste(text) return true end
+-- Event handler called when a mouse button is released and the widget is in focus.
 function Widget:onMouseDown(btn,x,y) return true end
+-- Event handler called when a mouse button is pressed over the widget.
 function Widget:onMouseUp(btn,x,y) return true end
+-- Event handler called when the mouse wheel is scrolled over the widget.
 function Widget:onMouseScroll(dir,x,y) return true end
+-- Event handler called when the widget is dragged.
 function Widget:onMouseDrag(btn,x,y) return true end
+-- Event handler called when the widget enters or leaves focus.
 function Widget:onFocus(focused) return true end
 
 -- Handles any input events recieved by the widget and passes them to
--- the appropriate callback functions
--- return true from an event callback to consume the event
--- (mainly useful for mouse_click and mouse_scroll)
+-- the appropriate callback functions.
+-- Return true from an event callback to consume the event and prevent it
+-- from being passed on to other widgets.
+-- Event consumption is mainly useful for mouse_click and mouse_scroll.
 function Widget:onEvent(evt)
     expect(1, evt, "table")
     if evt[1] == "mouse_drag" then
@@ -123,6 +148,7 @@ function Container:init(root)
     self.children = {}
 end
 
+-- Add a child widget to the Container.
 function Container:addChild(child,...)
     expect(1, child, "table")
     table.insert(self.children,child)
@@ -164,6 +190,8 @@ function Container:onLayout()
     end
 end
 
+-- Lays out the container's children.
+-- Specialized behavior is provided by subclasses of Container.
 function Container:layoutChildren() end
 
 -- Root: The root widget of the user interface. Handles focus, resizing, and other events.
@@ -176,6 +204,7 @@ function Root:init()
     self.backgroundColor = colors.lightGray
 end
 
+-- Called internally to render the root's first frame.
 function Root:show()
     self:onLayout()
     self:onRedraw()
@@ -217,8 +246,8 @@ function Root:onEvent(evt)
     return ret
 end
 
--- TODO: make rendering respect layers
 function Root:layoutChildren()
+    -- TODO: make rendering respect layers
     --for _,widget in pairs(self.children) do
     if #self.children >= 1 then
         local widget = self.children[1]
@@ -233,6 +262,7 @@ function Root:render()
     term.clear()
 end
 
+-- Shows the GUI and runs its event loop.
 function Root:mainLoop()
     self:show()
     while true do
@@ -251,10 +281,17 @@ end
 -- LinearContainer: Arranges child widgets in a horizontal or vertical line.
 --   Padding at the edges and spacing between widgets can be specified.
 --   Child widgets may be set to fill the major and/or minor axes of the container.
---   If multiple widgets are set to fill the major axis
+--   If multiple widgets are set to fill the major axis,
 --     then the free space will be evenly distributed between them.
 local LinearContainer = Container:subclass()
 
+-- LinearContainer constructor. Don't call this directly. Use LinearContainer:new(root, axis, spacing, padding)).
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - axis (LinearAxis): Which axis (HORIZONAL or VERTICAL) this container lies along.
+-- - spacing: Spacing between contained widgets.
+-- - padding: Padding between the first/last widgets and the container's edge.
 function LinearContainer:init(root,axis,spacing,padding)
     expect(1, root, "table")
     expect(2, axis, "number")
@@ -266,18 +303,25 @@ function LinearContainer:init(root,axis,spacing,padding)
     self.padding = padding
 end
 
-function LinearContainer:addChild(child,fillMajor,fillMinor,align)
+-- Adds a widget to the LinearContainer
+--
+-- Parameters:
+-- - child (Widget): the widget to add
+-- - fillPrimary (bool): whether the widget should fill the main axis specified in the constructor
+-- - fillSecondary (bool): whether the widget should fill the other axis perpendicular to the primary one
+-- - align (LinearAlign): whether the widget should be centered, left-aligned, or right-aligned
+function LinearContainer:addChild(child,fillPrimary,fillSecondary,align)
     expect(1, child, "table")
-    expect(2, fillMajor, "boolean")
-    expect(3, fillMinor, "boolean")
+    expect(2, fillPrimary, "boolean")
+    expect(3, fillSecondary, "boolean")
     expect(4, align, "number")
     LinearContainer.superClass.addChild(self,child)
-    child.layout.fillMajor = fillMajor
-    child.layout.fillMinor = fillMinor
+    child.layout.fillPrimary = fillPrimary
+    child.layout.fillSecondary = fillSecondary
     child.layout.align = align
 end
 
-function LinearContainer:getMinorAxis()
+function LinearContainer:getSecondaryAxis()
     if self.axis == 1 then
         return 2
     end
@@ -285,7 +329,7 @@ function LinearContainer:getMinorAxis()
 end
 
 function LinearContainer:getPreferredSize()
-    local axis2 = self:getMinorAxis()
+    local axis2 = self:getSecondaryAxis()
     
     local prefSize = {self.padding * 2,self.padding * 2}
     for i=1,#self.children do
@@ -302,7 +346,7 @@ function LinearContainer:getPreferredSize()
 end
 
 function LinearContainer:layoutChildren()
-    local axis2 = self:getMinorAxis()
+    local axis2 = self:getSecondaryAxis()
     
     local space_free = self.size[self.axis] - self.padding * 2
     local childrenFill = 0
@@ -313,7 +357,7 @@ function LinearContainer:layoutChildren()
         local prefSize = child:getPreferredSize()
         table.insert(preferred_sizes, prefSize)
         
-        if child.layout.fillMajor then
+        if child.layout.fillPrimary then
             childrenFill = childrenFill + 1
         else
             space_free = space_free - prefSize[self.axis]
@@ -331,7 +375,7 @@ function LinearContainer:layoutChildren()
         local size = 0
         local prefSize = preferred_sizes[i]
         
-        if child.layout.fillMajor then
+        if child.layout.fillPrimary then
             fillCount = fillCount + 1
             
             size = math.max((math.floor(space_free * fillCount / childrenFill)
@@ -345,7 +389,7 @@ function LinearContainer:layoutChildren()
         
         local cell_size = self.size[axis2] - self.padding * 2
         
-        if child.layout.fillMinor then
+        if child.layout.fillSecondary then
             child.size[axis2] = cell_size
         else
             child.size[axis2] = math.min(prefSize[axis2],cell_size)
@@ -363,11 +407,14 @@ function LinearContainer:layoutChildren()
     end
 end
 
--- RENDERED WIDGET CLASSES
-
 -- A label. Can display custom text.
 local Label = Widget:subclass()
 
+-- Label constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - axis (string): Text to display on the Label.
 function Label:init(root,text)
     expect(1, root, "table")
     expect(2, text, "string")
@@ -398,6 +445,11 @@ end
 -- Button. Can be pushed, and will trigger a custom onPressed() callback.
 local Button = Widget:subclass()
 
+-- Button constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - axis (string): Text to display on the Button.
 function Button:init(root,text)
     expect(1, root, "table")
     expect(2, text, "string")
@@ -411,7 +463,8 @@ function Button:init(root,text)
     self.enabled = true
 end
 
--- ***Override this method on a Button instance to set behavior***
+-- Event handler called when a Button is pressed.
+-- Override this method on a Button instance to set its behavior.
 function Button:onPressed() end
 
 function Button:getPreferredSize()
@@ -490,8 +543,14 @@ end
 -- A text field. You can type text in it.
 local TextField = Widget:subclass()
 
--- TODO: Add auto-completion
+-- TextField constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - length (int): Width of the text field in characters.
+-- - text (string): Initial contents of the TextField.
 function TextField:init(root,length,text)
+    -- TODO: Add auto-completion
     expect(1, root, "table")
     expect(2, length, "number")
     expect(3, text, "string")
@@ -507,6 +566,8 @@ function TextField:init(root,length,text)
     self.scroll = 0
 end
 
+-- Event handler called when the text in a TextField is edited.
+-- Override this method on an instance to set custom behavior.
 function TextField:onChanged() end
 
 function TextField:getPreferredSize()
@@ -620,8 +681,8 @@ function TextField:onMouseDrag(button, x, y)
     return true
 end
 
--- TODO: Add area selection
 function TextField:mouseSelect(x, y)
+    -- TODO: Add area selection
     expect(1, x, "number")
     expect(2, y, "number")
     self:moveCursor(x - self.pos[1] + 1 + self.scroll)
@@ -653,8 +714,8 @@ function TextArea:getPreferredSize()
     return {self.cols, self.rows}
 end
 
--- BUG: double newlines are combined
 function TextArea:setText(text)
+    -- BUG: double newlines are combined
     expect(1, text, "string")
     self.text = {}
     for line in text:gmatch("[^\r?\n]+") do
@@ -666,9 +727,9 @@ function TextArea:getText()
     return table.concat(self.text,"\n")
 end
 
--- TODO: add scrolling
--- BUG: cursor does not render at width
 function TextArea:render()
+    -- TODO: add scrolling
+    -- BUG: cursor does not render at width
     term.setTextColor(self.textColor)
     term.setBackgroundColor(self.color)
     
@@ -716,8 +777,8 @@ function TextArea:render()
     end
 end
 
--- TODO: Add DELETE key, fix up/down behavior with wrapped strings
 function TextArea:onKeyDown(key,held)
+    -- TODO: Add DELETE key, fix up/down behavior with wrapped strings
     if key == keys.backspace then
         if (self.charY > 1) and (self.charX == 1) then
             local text = table.remove(self.text,self.charY)
@@ -811,9 +872,9 @@ function TextArea:onMouseDrag(button, x, y)
     return true
 end
 
--- TODO: Add area selection
--- BUG: Off-by-one error, behaves wrongly when a line is exactly the widget width
 function TextArea:mouseSelect(x, y)
+    -- TODO: Add area selection
+    -- BUG: Off-by-one error, behaves wrongly when a line is exactly the widget width
     expect(1, x, "number")
     expect(2, y, "number")
     local myX,myY = self.pos[1],self.pos[2]
@@ -846,7 +907,7 @@ function ScrollWidget:init(root)
     self.scrollbar = nil
 end
 
--- Override this function to set the scroll range
+-- Returns the scroll range of the widget
 function ScrollWidget:getMaxScroll()
     return 0
 end
@@ -987,8 +1048,8 @@ end
 -- Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 local ScrollBar = Widget:subclass()
 
--- todo: add horizontal scrollbars
 function ScrollBar:init(root,scrollWidget)
+    -- todo: add horizontal scrollbars
     expect(1, root, "table")
     expect(2, scrollWidget, "table")
     ScrollBar.superClass.init(self,root)
@@ -1024,9 +1085,9 @@ function ScrollBar:getBarHeight()
     return math.max(math.floor((self.size[2]-2)*self.scrollWidget.size[2]/(maxScroll+self.scrollWidget.size[2])+0.5),1)
 end
 
--- kinda odd that the code to render a scrollbar is much longer
--- than that to render a list box (the thing you actually care about)
 function ScrollBar:render()
+    -- kinda odd that the code to render a scrollbar is much longer
+    -- than that to render a list box (the thing you actually care about)
     local enabled = self:canScroll()
     local barColor = self.barColor
     
@@ -1093,9 +1154,9 @@ function ScrollBar:onMouseScroll(dir, x, y)
     return true
 end
 
--- BUG: can sometimes scroll to invalid locations on edge cases (3 unit tall scrollbar)
--- todo: add timer to repeat buttons on hold
 function ScrollBar:onMouseDown(btn, x, y)
+    -- BUG: can sometimes scroll to invalid locations on edge cases (3 unit tall scrollbar)
+    -- todo: add timer to repeat buttons on hold
     if self:canScroll() then
         if y == self.pos[2] then
             self.drag = 4
@@ -1145,6 +1206,7 @@ end
 --     ScrollContainer, Image, TabContainer, MenuBar
 
 -- TODO: Improve this interface
+
 return {SpecialChars=SpecialChars,LinearAxis=LinearAxis,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
     Object=Object,Widget=Widget,Container=Container,Root=Root,
     LinearContainer=LinearContainer,Label=Label,Button=Button,

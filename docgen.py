@@ -1,6 +1,8 @@
 import sys
 import re
 
+SHOW_UNDOC_METHODS = False
+
 def format_block(block):
     return "\n".join(block)
 
@@ -8,15 +10,19 @@ def get_by_name(name, arr):
     for item in arr:
         if item.name == name:
             return item
-            
-class LuaMethod:
-    def __init__(self, name, parent_class, params, description):
+
+class LuaConstruct:
+    def __init__(self, name, description):
+        self.name = name
+        self.description = description
+
+class LuaMethod(LuaConstruct):
+    def __init__(self, name, description, parent_class, params):
+        super().__init__(name, description)
         #if name == "init":
         #    name = "new"
-        self.name = name
         self.params = params
         self.parent_class = parent_class
-        self.description = description
         if self.parent_class:
             self.parent_class.methods.append(self)
     def get_description(self):
@@ -29,15 +35,16 @@ class LuaMethod:
                 return m.description
             c = c.super_class
     def write(self, stream):
+        if not SHOW_UNDOC_METHODS and not self.description:
+            return
         stream.write("### "+self.parent_class.name+":"+self.name+"("+", ".join(self.params)+")\n\n")
         desc = self.get_description()
         if desc:
             stream.write(desc+"\n\n")
 
-class LuaClass:
-    def __init__(self, name, super_class, description):
-        self.name = name
-        self.description = description
+class LuaClass(LuaConstruct):
+    def __init__(self, name, description, super_class):
+        super().__init__(name, description)
         self.methods = []
         self.super_class = super_class
     def write(self, stream):
@@ -60,7 +67,7 @@ def read_file(filename, classes):
         elif line.startswith("local") and "= {" in line:
             class_name = line.split()[1]
             if class_name[0].isupper():
-                c = LuaClass(class_name, None, format_block(block))
+                c = LuaClass(class_name, format_block(block), None)
                 classes.append(c)
                 block.clear()
         elif line.startswith("local") and ":subclass" in line:
@@ -73,7 +80,7 @@ def read_file(filename, classes):
             #    print("WARNING: class " + class_name + " not declared local")
             
             super_name = tokens[1].strip().split(":")[0]
-            c = LuaClass(class_name, get_by_name(super_name, classes), format_block(block))
+            c = LuaClass(class_name, format_block(block), get_by_name(super_name, classes))
             classes.append(c)
             block.clear()
         elif line.startswith("function "):
@@ -84,7 +91,7 @@ def read_file(filename, classes):
             name = full_name[full_name.index(":")+1:]
             class_name = full_name[:full_name.index(":")]
             c = get_by_name(class_name, classes)
-            m = LuaMethod(name, c, params, format_block(block))
+            m = LuaMethod(name, format_block(block), c, params)
             block.clear()
         elif not line:
             pass
