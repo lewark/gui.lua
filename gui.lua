@@ -12,6 +12,7 @@ local SpecialChars = {
     TRI_RIGHT=16,TRI_LEFT=17,TRI_UP=30,TRI_DOWN=31,
     ARROW_UP=24,ARROW_DOWN=25,ARROW_RIGHT=26,ARROW_LEFT=27,ARROW_LR=29,ARROW_UD=18
 }
+local LinearAxis = {HORIZONTAL=1,VERTICAL=2}
 local LinearAlign = {CENTER=0,START=1,END=2}
 local BoxAlign = {CENTER=0,TOP=1,BOTTOM=2,LEFT=3,RIGHT=4}
 
@@ -1144,7 +1145,7 @@ end
 --     ScrollContainer, Image, TabContainer, MenuBar
 
 -- TODO: Improve this interface
-local gui = {SpecialChars=SpecialChars,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
+local gui = {SpecialChars=SpecialChars,LinearAxis=LinearAxis,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
     Object=Object,Widget=Widget,Container=Container,Root=Root,
     LinearContainer=LinearContainer,Label=Label,Button=Button,
     TextField=TextField,TextArea=TextArea,ScrollWidget=ScrollWidget,

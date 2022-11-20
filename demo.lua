@@ -2,8 +2,8 @@ local gui = require('gui')
 
 local root = gui.Root:new()
 
-local box = gui.LinearContainer:new(root,2,1,1)
-local box2 = gui.LinearContainer:new(root,1,0,0)
+local box = gui.LinearContainer:new(root,gui.LinearAxis.VERTICAL,1,1)
+local box2 = gui.LinearContainer:new(root,gui.LinearAxis.HORIZONTAL,0,0)
 
 local lbl = gui.Label:new(root,"Hello!")
 local btn1 = gui.Button:new(root,"Button 1")
