@@ -488,7 +488,7 @@ function Button:onFocus(focused)
 end
 
 -- A text field. You can type text in it.
-TextField = Widget:subclass()
+local TextField = Widget:subclass()
 
 -- TODO: Add auto-completion
 function TextField:init(root,length,text)
@@ -631,7 +631,7 @@ end
 -- A text area for editing multi-line text. Very buggy.
 -- TODO: rewrite, use virtual lines for text wrapping
 --        also allow wrapping to be disabled
-TextArea = Widget:subclass()
+local TextArea = Widget:subclass()
 
 function TextArea:init(root,cols,rows,text)
     expect(1, root, "table")
@@ -1145,9 +1145,8 @@ end
 --     ScrollContainer, Image, TabContainer, MenuBar
 
 -- TODO: Improve this interface
-local gui = {SpecialChars=SpecialChars,LinearAxis=LinearAxis,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
+return {SpecialChars=SpecialChars,LinearAxis=LinearAxis,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
     Object=Object,Widget=Widget,Container=Container,Root=Root,
     LinearContainer=LinearContainer,Label=Label,Button=Button,
     TextField=TextField,TextArea=TextArea,ScrollWidget=ScrollWidget,
     ListBox=ListBox,ScrollBar=ScrollBar}
-return gui

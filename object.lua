@@ -6,7 +6,8 @@ local expect = require "cc.expect"
 local Object = {}
 
 -- Call new() to create an instance of any class.
--- Do not override this method. It will call the class's init() for you.
+-- It will call the class's init() for you.
+-- Do not override this method. The class's constructor should be defined in init(...).
 function Object:new(...)
     local instance = setmetatable({},{__index=self})
     instance.class = self
@@ -33,8 +34,7 @@ end
 
 -- The object's constructor. Override this method to initialize an Object subclass.
 -- init() parameters will be passed in from new().
--- An object's init() may also call its super class's init() if desired.
---   Use ClassName.superClass.init(self,...)
+-- An object's init() may also call its super class's init() if desired (use `ClassName.superClass.init(self,...)`)
 -- This method should only be called from within new() or a subclass's init().
 function Object:init(...) end
 
