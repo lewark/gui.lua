@@ -37,3 +37,5 @@ end
 --   Use ClassName.superClass.init(self,...)
 -- This method should only be called from within new() or a subclass's init().
 function Object:init(...) end
+
+return Object

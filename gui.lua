@@ -5,7 +5,7 @@ local expect = require "cc.expect"
 local top_events = {"mouse_click","mouse_scroll"}
 local focus_events = {"mouse_up","mouse_drag","char","key","key_up","paste"}
 
-local object = require "object"
+local Object = require "object"
 
 local SpecialChars = {
     MINIMIZE=22,MAXIMIZE=23,STRIPES=127,
