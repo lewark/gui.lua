@@ -54,7 +54,7 @@ function Container:onLayout()
     end
 end
 
--- Lays out the container's children.
+-- Updates the position and size of all widgets within the Container.
 -- Specialized behavior is provided by subclasses of Container.
 function Container:layoutChildren() end
 
