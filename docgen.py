@@ -40,12 +40,6 @@ def get_by_name(name, arr):
         if item.name == name:
             return item
 
-def write_contents(stream, classes):
-    stream.write("## Contents\n\n")
-    for c in classes:
-        stream.write("- " + c.get_link() + "\n")
-    stream.write("\n")
-
 class LuaConstruct:
     def __init__(self, name, description):
         self.name = name
@@ -148,55 +142,70 @@ class LuaClass(LuaConstruct):
         for m in self.members:
             m.write(stream)
 
+class Document:
+    def __init__(self, name):
+        self.name = name
+        self.classes = []
 
-def read_file(filename, classes):
-    block = []
-    infile = open(filename,"r",encoding="utf-8")
-    for line in infile.readlines():
-        match = None
-        if not line:
-            pass
-        elif line.startswith("--"):
-            block.append(line[2:].strip())
-        elif match := SIMPLE_RE.match(line):
-            class_name = match.group(1)
-            c = LuaClass(class_name, format_block(block), None)
-            classes.append(c)
-            block.clear()
-        elif match := FIELD_RE.match(line):
-            class_name = match.group(1)
-            field_name = match.group(2)
-            c = get_by_name(class_name, classes)
-            f = LuaMember(field_name, format_block(block), c)
-            block.clear()
-        elif match := SUBCLASS_RE.match(line):
-            class_name = match.group(1)
-            super_name = match.group(2)
-            c = LuaClass(class_name, format_block(block), get_by_name(super_name, classes))
-            classes.append(c)
-            block.clear()
-        elif match := METHOD_RE.match(line):
-            class_name = match.group(1)
-            name = match.group(2)
-            params = PARAM_RE.split(match.group(3))
-            c = get_by_name(class_name, classes)
-            m = LuaMethod(name, format_block(block), c, params)
-            block.clear()
-        else:
-            block.clear()
+    def read_file(self, filename):
+        block = []
+        infile = open(filename, "r", encoding="utf-8")
+        for line in infile.readlines():
+            match = None
+            if not line:
+                pass
+            elif line.startswith("--"):
+                block.append(line[2:].strip())
+            elif match := SIMPLE_RE.match(line):
+                class_name = match.group(1)
+                c = LuaClass(class_name, format_block(block), None)
+                self.classes.append(c)
+                block.clear()
+            elif match := FIELD_RE.match(line):
+                class_name = match.group(1)
+                field_name = match.group(2)
+                c = get_by_name(class_name, self.classes)
+                f = LuaMember(field_name, format_block(block), c)
+                block.clear()
+            elif match := SUBCLASS_RE.match(line):
+                class_name = match.group(1)
+                super_name = match.group(2)
+                c = LuaClass(class_name, format_block(block), get_by_name(super_name, self.classes))
+                self.classes.append(c)
+                block.clear()
+            elif match := METHOD_RE.match(line):
+                class_name = match.group(1)
+                name = match.group(2)
+                params = PARAM_RE.split(match.group(3))
+                c = get_by_name(class_name, self.classes)
+                m = LuaMethod(name, format_block(block), c, params)
+                block.clear()
+            else:
+                block.clear()
+        infile.close()
 
-classes = []
-for file in FILES:
-    read_file("gui/" + file + ".lua", classes)
+    def write_contents(self, stream):
+        stream.write("## Contents\n\n")
+        for c in self.classes:
+            stream.write("- " + c.get_link() + "\n")
+        stream.write("\n")
 
-out = sys.stdout
-if len(sys.argv) == 2:
-    out = open(sys.argv[1],"w",encoding="utf-8")
+    def write(self, stream):
+        stream.write("# " + self.name + "\n\n")
+        self.write_contents(stream)
+        for c in self.classes:
+            c.write(stream)
 
-out.write("# gui.lua\n\n")
-write_contents(out, classes)
-for c in classes:
-    c.write(out)
+if __name__ == "__main__":
+    doc = Document("gui.lua")
+    for file in FILES:
+        doc.read_file("gui/" + file + ".lua")
 
-if out != sys.stdout:
-    out.close()
+    out = sys.stdout
+    if len(sys.argv) == 2:
+        out = open(sys.argv[1], "w", encoding="utf-8")
+
+    doc.write(out)
+
+    if out != sys.stdout:
+        out.close()
