@@ -21,7 +21,7 @@ def get_by_name(name, arr):
 def write_contents(stream, classes):
     stream.write("## Contents\n\n")
     for c in classes:
-        stream.write("- [{0}]({1})\n".format(c.get_heading(), c.get_link()))
+        stream.write("- " + c.get_link() + "\n")
     stream.write("\n")
 
 class LuaConstruct:
@@ -32,12 +32,15 @@ class LuaConstruct:
     def get_heading(self):
         return self.name
 
-    def get_link(self):
+    def get_link_target(self):
         x = self.get_heading().lower()
         x = x.replace(":","")
         x = x.replace(",","")
         x = x.replace(" ","-")
         return "#" + x
+    
+    def get_link(self):
+        return "[{0}]({1})".format(self.get_heading(), self.get_link_target())
 
 class LuaMethod(LuaConstruct):
     def __init__(self, name, description, parent_class, params):
@@ -91,7 +94,7 @@ class LuaClass(LuaConstruct):
         hierarchy = []
         c = self
         while c:
-            hierarchy.append(c.name)
+            hierarchy.append(c.get_link())
             c = c.super_class
         stream.write(" > ".join(hierarchy))
         stream.write("\n\n")

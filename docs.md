@@ -27,19 +27,19 @@ Implements basic inheritance features.
 
 Object constructor.
 
-To create an instance of an Object, use Object(args), which will instantiate
+To create an instance of an Object, call Object(args), which will instantiate
 the class and then call the Object's constructor to set up the instance.
 The process works the same way for subclasses: just replace Object with the
 name of the class you are instantiating.
 
-Internally, the constructor is named init(...). Override this init method
-to specify initialization behavior for an Object subclass. An object's
+Internally, the constructor is named Object:init(...). Override this init
+method to specify initialization behavior for an Object subclass. An object's
 init() method may call its super class's init() if desired
 (use ClassName.superClass.init(self,...))
 
 ### Object:subclass()
 
-Call subclass() to create a subclass of an existing class.
+Creates a subclass of an existing class.
 
 ### Object:instanceof(class)
 
@@ -71,7 +71,7 @@ Currently unused.
 
 ## Widget
 
-Inheritance: Widget > Object
+Inheritance: [Widget](#widget) > [Object](#object)
 
 Base class for GUI elements.
 
@@ -148,7 +148,7 @@ Event consumption is mainly useful for mouse_click and mouse_scroll.
 
 ## Container
 
-Inheritance: Container > Widget > Object
+Inheritance: [Container](#container) > [Widget](#widget) > [Object](#object)
 
 Base class for all widgets that can contain other widgets.
 
@@ -167,7 +167,7 @@ Specialized behavior is provided by subclasses of Container.
 
 ## Root
 
-Inheritance: Root > Container > Widget > Object
+Inheritance: [Root](#root) > [Container](#container) > [Widget](#widget) > [Object](#object)
 
 The root widget of the user interface. Handles focus, resizing, and other events.
 
@@ -185,7 +185,7 @@ Shows the GUI and runs its event loop.
 
 ## LinearContainer
 
-Inheritance: LinearContainer > Container > Widget > Object
+Inheritance: [LinearContainer](#linearcontainer) > [Container](#container) > [Widget](#widget) > [Object](#object)
 
 Container that arranges child widgets in a horizontal or vertical line.
 Padding at the edges and spacing between widgets can be specified.
@@ -217,7 +217,7 @@ Parameters:
 
 ## Label
 
-Inheritance: Label > Widget > Object
+Inheritance: [Label](#label) > [Widget](#widget) > [Object](#object)
 
 A label. Can display custom text.
 
@@ -231,7 +231,7 @@ Parameters:
 
 ## Button
 
-Inheritance: Button > Widget > Object
+Inheritance: [Button](#button) > [Widget](#widget) > [Object](#object)
 
 Button. Can be pushed, and will trigger a custom onPressed() callback.
 
@@ -250,7 +250,7 @@ Override this method on a Button instance to set its behavior.
 
 ## TextField
 
-Inheritance: TextField > Widget > Object
+Inheritance: [TextField](#textfield) > [Widget](#widget) > [Object](#object)
 
 A text field that allows users to type text within it.
 
@@ -284,7 +284,7 @@ Gets the text within the TextField
 
 ## TextArea
 
-Inheritance: TextArea > Widget > Object
+Inheritance: [TextArea](#textarea) > [Widget](#widget) > [Object](#object)
 
 A text area for editing multi-line text. Very buggy.
 TODO: rewrite, use virtual lines for text wrapping
@@ -312,7 +312,7 @@ Gets the text within the text area.
 
 ## ScrollWidget
 
-Inheritance: ScrollWidget > Widget > Object
+Inheritance: [ScrollWidget](#scrollwidget) > [Widget](#widget) > [Object](#object)
 
 Base class for scrollable widgets
 
@@ -328,7 +328,7 @@ Returns the scroll range of the widget
 
 ## ListBox
 
-Inheritance: ListBox > ScrollWidget > Widget > Object
+Inheritance: [ListBox](#listbox) > [ScrollWidget](#scrollwidget) > [Widget](#widget) > [Object](#object)
 
 List box. Allows an array of choices to be displayed, one of which can be
 selected at a time. Can be scrolled using the mouse wheel or a ScrollBar
@@ -355,7 +355,7 @@ Override this method to receive selection events.
 
 ## ScrollBar
 
-Inheritance: ScrollBar > Widget > Object
+Inheritance: [ScrollBar](#scrollbar) > [Widget](#widget) > [Object](#object)
 
 Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 
