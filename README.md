@@ -14,12 +14,7 @@ This is a basic GUI toolkit for CC:Tweaked. Currently, the widgets include:
 
 ## Installation
 
-A single-file version of the library can be downloaded from Pastebin:
-```
-pastebin get WpnbkREi gui.lua
-```
-
-Alternatively, the library can be cloned from GitHub using [gitget](https://www.computercraft.info/forums2/index.php?/topic/17387-gitget-version-2-release/):
+The library can be cloned from GitHub using [gitget](https://www.computercraft.info/forums2/index.php?/topic/17387-gitget-version-2-release/):
 
 ```
 pastebin get W5ZkVYSi gitget
