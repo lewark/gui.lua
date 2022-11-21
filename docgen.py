@@ -1,7 +1,10 @@
 import sys
 import re
 
-SHOW_UNDOC_METHODS = False
+# TODO: Add table of contents and links
+
+SHOW_UNDOC_OVERRIDES = False
+ALWAYS_SHOW = ["init"]
 
 def format_block(block):
     return "\n".join(block)
@@ -25,6 +28,7 @@ class LuaMethod(LuaConstruct):
         self.parent_class = parent_class
         if self.parent_class:
             self.parent_class.methods.append(self)
+
     def get_description(self):
         if self.description:
             return self.description
@@ -34,9 +38,15 @@ class LuaMethod(LuaConstruct):
             if m and m.description:
                 return m.description
             c = c.super_class
+
     def write(self, stream):
-        if not SHOW_UNDOC_METHODS and not self.description:
-            return
+        if not SHOW_UNDOC_OVERRIDES and self.name not in ALWAYS_SHOW and not self.description:
+            c = self.parent_class.super_class
+            found = False
+            while c:
+                if get_by_name(self.name, c.methods):
+                    return
+                c = c.super_class
         stream.write("### "+self.parent_class.name+":"+self.name+"("+", ".join(self.params)+")\n\n")
         desc = self.get_description()
         if desc:
@@ -47,10 +57,21 @@ class LuaClass(LuaConstruct):
         super().__init__(name, description)
         self.methods = []
         self.super_class = super_class
+
+    def write_hierarchy(self, stream):
+        stream.write("Inheritance: ");
+        hierarchy = []
+        c = self
+        while c:
+            hierarchy.append(c.name)
+            c = c.super_class
+        stream.write(" > ".join(hierarchy))
+        stream.write("\n\n")
+
     def write(self, stream):
         stream.write("## "+self.name+"\n\n")
         if self.super_class:
-            stream.write("Inherits from "+self.super_class.name+"\n\n")
+            self.write_hierarchy(stream)
         if self.description:
             stream.write(self.description+"\n\n")
         for m in self.methods:

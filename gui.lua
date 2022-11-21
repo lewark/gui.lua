@@ -7,6 +7,10 @@ local focus_events = {"mouse_up","mouse_drag","char","key","key_up","paste"}
 
 local Object = require "object"
 
+-- Various special characters provided by ComputerCraft:
+--
+-- MINIMIZE, MAXIMIZE, STRIPES, TRI_RIGHT, TRI_LEFT, TRI_UP, TRI_DOWN,
+-- ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, ARROW_LR, ARROW_UD
 local SpecialChars = {
     MINIMIZE=22,MAXIMIZE=23,STRIPES=127,
     TRI_RIGHT=16,TRI_LEFT=17,TRI_UP=30,TRI_DOWN=31,
@@ -17,11 +21,13 @@ local SpecialChars = {
 -- - LinearAxis.HORIZONTAL: X axis
 -- - LinearAxis.VERTICAL: Y axis
 local LinearAxis = {HORIZONTAL=1,VERTICAL=2}
+
 -- Enum used to specify layouts within LinearContainers.
 -- - LinearAxis.CENTER: center the widget within its cell
 -- - LinearAxis.START: align the widget to the top (HORIZONTAL container) or left (VERTICAL) of its cell
 -- - LinearAxis.END: align the widget to the bottom (HORIZONTAL container) or right (VERTICAL) of its cell
 local LinearAlign = {CENTER=0,START=1,END=2}
+
 -- Currently unused.
 local BoxAlign = {CENTER=0,TOP=1,BOTTOM=2,LEFT=3,RIGHT=4}
 
@@ -36,12 +42,11 @@ local function contains(tbl,val)
     return false
 end
 
--- WIDGET CLASSES
-
+-- Base class for GUI elements.
 local Widget = Object:subclass()
 
--- Widget constructor. This should not be called directly except by new() and subclasses.
--- To instantiate a widget for a GUI use [class name]:new(...), which creates
+-- Widget constructor. This should not be called directly.
+-- To instantiate a widget for a GUI use Widget(args), which creates
 -- the object and passes the arguments to its init method.
 function Widget:init(root)
     expect(1, root, "table", "nil")
@@ -108,9 +113,8 @@ function Widget:onMouseDrag(btn,x,y) return true end
 function Widget:onFocus(focused) return true end
 
 -- Handles any input events recieved by the widget and passes them to
--- the appropriate callback functions.
--- Return true from an event callback to consume the event and prevent it
--- from being passed on to other widgets.
+-- the appropriate handler functions. Return true from an event handler
+-- to consume the event and prevent it from being passed on to other widgets.
 -- Event consumption is mainly useful for mouse_click and mouse_scroll.
 function Widget:onEvent(evt)
     expect(1, evt, "table")
@@ -137,11 +141,10 @@ function Widget:onEvent(evt)
     return false
 end
 
--- CONTAINER CLASSES
-
--- Container: Base class for all widgets that can contain other widgets
+-- Base class for all widgets that can contain other widgets.
 local Container = Widget:subclass()
 
+-- Container constructor.
 function Container:init(root)
     expect(1, root, "table", "nil")
     Container.superClass.init(self,root)
@@ -194,9 +197,10 @@ end
 -- Specialized behavior is provided by subclasses of Container.
 function Container:layoutChildren() end
 
--- Root: The root widget of the user interface. Handles focus, resizing, and other events.
+-- The root widget of the user interface. Handles focus, resizing, and other events.
 local Root = Container:subclass()
 
+-- Root constructor.
 function Root:init()
     Root.superClass.init(self,nil)
     self.focus = nil
@@ -285,7 +289,7 @@ end
 --     then the free space will be evenly distributed between them.
 local LinearContainer = Container:subclass()
 
--- LinearContainer constructor. Don't call this directly. Use LinearContainer:new(root, axis, spacing, padding)).
+-- LinearContainer constructor. Don't call this directly. Use LinearContainer(root, axis, spacing, padding)).
 --
 -- Parameters:
 -- - root (Root): The root widget
@@ -540,7 +544,7 @@ function Button:onFocus(focused)
     return true
 end
 
--- A text field. You can type text in it.
+-- A text field that allows users to type text within it.
 local TextField = Widget:subclass()
 
 -- TextField constructor.
@@ -569,6 +573,16 @@ end
 -- Event handler called when the text in a TextField is edited.
 -- Override this method on an instance to set custom behavior.
 function TextField:onChanged() end
+
+-- Sets the text within the TextField
+function TextField:setText(text)
+    self.text = text
+    self.dirty = true
+end
+
+function TextField:getText()
+    return self.text
+end
 
 function TextField:getPreferredSize()
     return {self.length,1}
@@ -694,6 +708,12 @@ end
 --        also allow wrapping to be disabled
 local TextArea = Widget:subclass()
 
+-- TextArea constructor.
+-- Parameters:
+-- - root: The root widget
+-- - cols: The preferred width of the text area
+-- - rows: The preferred height of the text area
+-- - text: Initial contents of the text area
 function TextArea:init(root,cols,rows,text)
     expect(1, root, "table")
     expect(2, cols, "number")
@@ -714,6 +734,7 @@ function TextArea:getPreferredSize()
     return {self.cols, self.rows}
 end
 
+-- Sets the text within the text area.
 function TextArea:setText(text)
     -- BUG: double newlines are combined
     expect(1, text, "string")
@@ -721,8 +742,10 @@ function TextArea:setText(text)
     for line in text:gmatch("[^\r?\n]+") do
         table.insert(self.text,line)
     end
+    self.dirty = true
 end
 
+-- Gets the text within the text area.
 function TextArea:getText()
     return table.concat(self.text,"\n")
 end
@@ -897,6 +920,7 @@ function TextArea:mouseSelect(x, y)
     self.dirty = true
 end
 
+-- Base class for scrollable widgets
 local ScrollWidget = Widget:subclass()
 
 function ScrollWidget:init(root)
@@ -940,6 +964,13 @@ end
 --   widget, and is able to efficiently display large amounts of items.
 local ListBox = ScrollWidget:subclass()
 
+-- ListBox constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - cols (int): The preferred width of the ListBox
+-- - rows (int): The preferred height of the ListBox
+-- - items (string[]): Items contained within the ListBox
 function ListBox:init(root,cols,rows,items)
     expect(1, root, "table")
     expect(2, cols, "number")
@@ -989,7 +1020,8 @@ function ListBox:onLayout()
     self:setScroll(self.scroll)
 end
 
--- Override this method to receive selection events
+-- Event handler called when the selected item is changed.
+-- Override this method to receive selection events.
 function ListBox:onSelectionChanged() end
 
 function ListBox:setSelected(n)
@@ -1048,6 +1080,11 @@ end
 -- Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 local ScrollBar = Widget:subclass()
 
+-- ScrollBar constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - scrollWidget (ScrollWidget): The widget this ScrollBar should scroll
 function ScrollBar:init(root,scrollWidget)
     -- todo: add horizontal scrollbars
     expect(1, root, "table")
