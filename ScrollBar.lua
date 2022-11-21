@@ -1,5 +1,7 @@
 local expect = require "cc.expect"
+local Constants = require "Constants"
 local Widget = require "Widget"
+
 
 -- Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 local ScrollBar = Widget:subclass()
@@ -64,7 +66,7 @@ function ScrollBar:render()
         term.setBackgroundColor(barColor)
     end
     term.setCursorPos(self.pos[1],self.pos[2])
-    term.write(string.char(SpecialChars.TRI_UP))
+    term.write(string.char(Constants.SpecialChars.TRI_UP))
 
     if self.drag == 5 then
         term.setBackgroundColor(self.pressedColor)
@@ -72,7 +74,7 @@ function ScrollBar:render()
         term.setBackgroundColor(barColor)
     end
     term.setCursorPos(self.pos[1],self.pos[2]+self.size[2]-1)
-    term.write(string.char(SpecialChars.TRI_DOWN))
+    term.write(string.char(Constants.SpecialChars.TRI_DOWN))
 
     if enabled then
         local barPos = self:getBarPos()

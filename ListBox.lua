@@ -119,4 +119,4 @@ function ListBox:onKeyDown(key,held)
     return true
 end
 
-return ScrollWidget
+return ListBox

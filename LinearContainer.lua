@@ -1,4 +1,5 @@
 local expect = require "cc.expect"
+local Constants = require "Constants"
 local Container = require "Container"
 
 -- Container that arranges child widgets in a horizontal or vertical line.
@@ -45,10 +46,10 @@ function LinearContainer:addChild(child,fillPrimary,fillSecondary,align)
 end
 
 function LinearContainer:getSecondaryAxis()
-    if self.axis == 1 then
-        return 2
+    if self.axis == Constants.LinearAxis.HORIZONTAL then
+        return Constants.LinearAxis.VERTICAL
     end
-    return 1
+    return Constants.LinearAxis.HORIZONTAL
 end
 
 function LinearContainer:getPreferredSize()
@@ -118,11 +119,11 @@ function LinearContainer:layoutChildren()
             child.size[axis2] = math.min(prefSize[axis2],cell_size)
         end
 
-        if child.layout.align == LinearAlign.CENTER then
+        if child.layout.align == Constants.LinearAlign.CENTER then
             child.pos[axis2] = self.pos[axis2]+self.padding+math.floor((cell_size-child.size[axis2])/2)
-        elseif child.layout.align == LinearAlign.START then
+        elseif child.layout.align == Constants.LinearAlign.START then
             child.pos[axis2] = self.pos[axis2]+self.padding
-        elseif child.layout.align == LinearAlign.END then
+        elseif child.layout.align == Constants.LinearAlign.END then
             child.pos[axis2] = self.pos[axis2]+self.size[axis2]-self.padding-child.size[axis2]
         end
 
