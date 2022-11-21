@@ -50,6 +50,7 @@ class LuaConstruct:
     def __init__(self, name, description):
         self.name = name
         self.description = description
+        self.level = 2
 
     def get_heading(self):
         return self.name
@@ -60,9 +61,24 @@ class LuaConstruct:
         x = x.replace(",","")
         x = x.replace(" ","-")
         return "#" + x
+
+    def get_description(self):
+        return self.description
     
     def get_link(self):
         return "[{0}]({1})".format(self.get_heading(), self.get_link_target())
+
+    def write_heading(self, stream):
+        stream.write("#" * self.level + " " + self.get_heading() + "\n\n")
+
+    def write_description(self, stream):
+        desc = self.get_description()
+        if desc:
+            stream.write(desc+"\n\n")
+
+    def write(self, stream):
+        self.write_heading(stream)
+        self.write_description(stream)
 
 class LuaMember(LuaConstruct):
     def __init__(self, name, description, parent_class):
@@ -70,11 +86,10 @@ class LuaMember(LuaConstruct):
         self.parent_class = parent_class
         if self.parent_class:
             self.parent_class.members.append(self)
+        self.level = 3
 
-    def write(self, stream):
-        stream.write("### "+self.name+"\n\n")
-        if self.description:
-            stream.write(self.description+"\n\n")
+    def get_heading(self):
+        return self.parent_class.name + "." + self.name
 
 class LuaMethod(LuaMember):
     def __init__(self, name, description, parent_class, params):
@@ -107,10 +122,7 @@ class LuaMethod(LuaMember):
                 if get_by_name(self.name, c.members):
                     return
                 c = c.super_class
-        stream.write("### "+self.get_heading()+"\n\n")
-        desc = self.get_description()
-        if desc:
-            stream.write(desc+"\n\n")
+        super().write(stream)
 
 class LuaClass(LuaConstruct):
     def __init__(self, name, description, super_class):
@@ -129,11 +141,10 @@ class LuaClass(LuaConstruct):
         stream.write("\n\n")
 
     def write(self, stream):
-        stream.write("## "+self.name+"\n\n")
+        self.write_heading(stream)
         if self.super_class:
             self.write_hierarchy(stream)
-        if self.description:
-            stream.write(self.description+"\n\n")
+        self.write_description(stream)
         for m in self.members:
             m.write(stream)
 

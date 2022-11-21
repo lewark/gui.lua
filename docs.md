@@ -18,30 +18,30 @@
 
 ## Constants
 
-### TOP_EVENTS
+### Constants.TOP_EVENTS
 
 List of events that should only be passed to the topmost widget directly
 under the mouse cursor (clicking, scrolling)
 
-### FOCUS_EVENTS
+### Constants.FOCUS_EVENTS
 
 List of events that should be passed to the currently focused widget
 (e.g. keyboard events)
 
-### SpecialChars
+### Constants.SpecialChars
 
 Various special characters provided by ComputerCraft:
 
 MINIMIZE, MAXIMIZE, STRIPES, TRI_RIGHT, TRI_LEFT, TRI_UP, TRI_DOWN,
 ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, ARROW_LR, ARROW_UD
 
-### LinearAxis
+### Constants.LinearAxis
 
 Enum used to specify layouts within LinearContainers.
 - LinearAxis.HORIZONTAL: X axis
 - LinearAxis.VERTICAL: Y axis
 
-### LinearAlign
+### Constants.LinearAlign
 
 Enum used to specify layouts within LinearContainers.
 - LinearAxis.CENTER: center the widget within its cell
