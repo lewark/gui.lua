@@ -1,10 +1,14 @@
 local Constants = {}
 
+-- List of events that should only be passed to the topmost widget directly
+-- under the mouse cursor (clicking, scrolling)
 Constants.TOP_EVENTS = {
     ["mouse_click"] = true,
     ["mouse_scroll"] = true,
 }
 
+-- List of events that should be passed to the currently focused widget
+-- (e.g. keyboard events)
 Constants.FOCUS_EVENTS = {
     ["mouse_up"] = true,
     ["mouse_drag"] = true,
@@ -36,6 +40,6 @@ Constants.LinearAxis = {HORIZONTAL=1,VERTICAL=2}
 Constants.LinearAlign = {CENTER=0,START=1,END=2}
 
 -- Currently unused.
-Constants.BoxAlign = {CENTER=0,TOP=1,BOTTOM=2,LEFT=3,RIGHT=4}
+-- Constants.BoxAlign = {CENTER=0,TOP=1,BOTTOM=2,LEFT=3,RIGHT=4}
 
 return Constants

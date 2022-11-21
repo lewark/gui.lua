@@ -20,7 +20,13 @@
 
 ### TOP_EVENTS
 
+List of events that should only be passed to the topmost widget directly
+under the mouse cursor (clicking, scrolling)
+
 ### FOCUS_EVENTS
+
+List of events that should be passed to the currently focused widget
+(e.g. keyboard events)
 
 ### SpecialChars
 
@@ -41,10 +47,6 @@ Enum used to specify layouts within LinearContainers.
 - LinearAxis.CENTER: center the widget within its cell
 - LinearAxis.START: align the widget to the top (HORIZONTAL container) or left (VERTICAL) of its cell
 - LinearAxis.END: align the widget to the bottom (HORIZONTAL container) or right (VERTICAL) of its cell
-
-### BoxAlign
-
-Currently unused.
 
 ## Object
 
