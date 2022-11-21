@@ -25,9 +25,17 @@ Implements basic inheritance features.
 
 ### Object(...)
 
-Object constructor. Override this method to initialize an Object subclass.
-To create an instance of an object, use Object(args), which will then call its init() method to set up the instance.
-An object's init() method may call its super class's init() if desired (use ClassName.superClass.init(self,...))
+Object constructor.
+
+To create an instance of an Object, use Object(args), which will instantiate
+the class and then call the Object's constructor to set up the instance.
+The process works the same way for subclasses: just replace Object with the
+name of the class you are instantiating.
+
+Internally, the constructor is named init(...). Override this init method
+to specify initialization behavior for an Object subclass. An object's
+init() method may call its super class's init() if desired
+(use ClassName.superClass.init(self,...))
 
 ### Object:subclass()
 
