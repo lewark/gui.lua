@@ -187,7 +187,7 @@ def read_file(filename, classes):
 
 classes = []
 for file in FILES:
-    read_file(file + ".lua", classes)
+    read_file("gui/" + file + ".lua", classes)
 #outfile = open("docs.md","w",encoding="utf-8")
 outfile = sys.stdout
 outfile.write("# gui.lua\n\n")

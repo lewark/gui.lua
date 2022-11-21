@@ -1,5 +1,5 @@
 local expect = require "cc.expect"
-local Widget = require "Widget"
+local Widget = require "gui.Widget"
 
 -- A text field that allows users to type text within it.
 local TextField = Widget:subclass()

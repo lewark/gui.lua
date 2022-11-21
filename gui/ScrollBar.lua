@@ -1,7 +1,6 @@
 local expect = require "cc.expect"
-local Constants = require "Constants"
-local Widget = require "Widget"
-
+local Constants = require "gui.Constants"
+local Widget = require "gui.Widget"
 
 -- Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 local ScrollBar = Widget:subclass()

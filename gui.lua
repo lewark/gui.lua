@@ -1,18 +1,18 @@
 -- gui.lua: GUI toolkit for ComputerCraft
 
-local Constants = require "Constants"
-local Object = require "Object"
-local Widget = require "Widget"
-local Container = require "Container"
-local Root = require "Root"
-local LinearContainer = require "LinearContainer"
-local Label = require "Label"
-local Button = require "Button"
-local TextField = require "TextField"
-local TextArea = require "TextArea"
-local ScrollWidget = require "ScrollWidget"
-local ListBox = require "ListBox"
-local ScrollBar = require "ScrollBar"
+local Constants = require "gui.Constants"
+local Object = require "gui.Object"
+local Widget = require "gui.Widget"
+local Container = require "gui.Container"
+local Root = require "gui.Root"
+local LinearContainer = require "gui.LinearContainer"
+local Label = require "gui.Label"
+local Button = require "gui.Button"
+local TextField = require "gui.TextField"
+local TextArea = require "gui.TextArea"
+local ScrollWidget = require "gui.ScrollWidget"
+local ListBox = require "gui.ListBox"
+local ScrollBar = require "gui.ScrollBar"
 
 -- TODO:
 -- Add BoxContainer, CheckBox, ComboBox, Slider,

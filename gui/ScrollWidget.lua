@@ -1,5 +1,5 @@
 local expect = require "cc.expect"
-local Widget = require "Widget"
+local Widget = require "gui.Widget"
 
 -- Base class for scrollable widgets
 local ScrollWidget = Widget:subclass()

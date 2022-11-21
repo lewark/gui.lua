@@ -1,6 +1,6 @@
 local expect = require "cc.expect"
-local Container = require "Container"
-local Constants = require "Constants"
+local Container = require "gui.Container"
+local Constants = require "gui.Constants"
 
 -- The root widget of the user interface. Handles focus, resizing, and other events.
 local Root = Container:subclass()

@@ -1,5 +1,5 @@
 local expect = require "cc.expect"
-local Widget = require "Widget"
+local Widget = require "gui.Widget"
 
 -- Displays custom text.
 local Label = Widget:subclass()

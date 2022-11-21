@@ -1,5 +1,5 @@
 local expect = require "cc.expect"
-local Widget = require "Widget"
+local Widget = require "gui.Widget"
 
 -- Can be clicked using the mouse, triggering a custom onPressed() callback.
 local Button = Widget:subclass()

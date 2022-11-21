@@ -1,5 +1,5 @@
 local expect = require "cc.expect"
-local ScrollWidget = require "ScrollWidget"
+local ScrollWidget = require "gui.ScrollWidget"
 
 -- List box. Allows an array of choices to be displayed, one of which can be
 --   selected at a time. Can be scrolled using the mouse wheel or a ScrollBar

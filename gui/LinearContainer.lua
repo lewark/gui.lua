@@ -1,6 +1,6 @@
 local expect = require "cc.expect"
-local Constants = require "Constants"
-local Container = require "Container"
+local Constants = require "gui.Constants"
+local Container = require "gui.Container"
 
 -- Container that arranges child widgets in a horizontal or vertical line.
 -- Padding at the edges and spacing between widgets can be specified.
@@ -14,7 +14,7 @@ local LinearContainer = Container:subclass()
 -- Parameters:
 -- - root (Root): The root widget
 -- - axis (LinearAxis): The primary axis of this container (HORIZONAL or VERTICAL).
--- - spacing (int): Spacing between contained widgets.
+-- - spacing (int): Spacing between contained gui.
 -- - padding (int): Padding between the first/last widgets and the container's edge.
 function LinearContainer:init(root,axis,spacing,padding)
     expect(1, root, "table")

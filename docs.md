@@ -134,14 +134,14 @@ Event handler called when the widget enters or leaves focus.
 
 Handles any input events recieved by the widget and passes them to
 the appropriate handler functions. Return true from an event handler
-to consume the event and prevent it from being passed on to other widgets.
+to consume the event and prevent it from being passed on to other gui.
 Event consumption is mainly useful for mouse_click and mouse_scroll.
 
 ## Container
 
 Inheritance: [Container](#container) > [Widget](#widget) > [Object](#object)
 
-Base class for all widgets that can contain other widgets.
+Base class for all widgets that can contain other gui.
 
 ### Container(root)
 
@@ -187,7 +187,7 @@ LinearContainer constructor.
 Parameters:
 - root (Root): The root widget
 - axis (LinearAxis): The primary axis of this container (HORIZONAL or VERTICAL).
-- spacing (int): Spacing between contained widgets.
+- spacing (int): Spacing between contained gui.
 - padding (int): Padding between the first/last widgets and the container's edge.
 
 ### LinearContainer:addChild(child, fillPrimary, fillSecondary, align)

@@ -1,5 +1,5 @@
 local expect = require "cc.expect"
-local Widget = require "Widget"
+local Widget = require "gui.Widget"
 
 -- A text area for editing multi-line text. Unfinished.
 local TextArea = Widget:subclass()

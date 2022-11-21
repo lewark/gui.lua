@@ -1,8 +1,8 @@
 local expect = require "cc.expect"
-local Widget = require "Widget"
-local Constants = require "Constants"
+local Widget = require "gui.Widget"
+local Constants = require "gui.Constants"
 
--- Base class for all widgets that can contain other widgets.
+-- Base class for all widgets that can contain other gui.
 local Container = Widget:subclass()
 
 -- Container constructor.
