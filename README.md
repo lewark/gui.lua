@@ -28,4 +28,4 @@ gitget knector01 gui.lua master gui
 
 ## Documentation
 
-Documentation is provided in the file `docs.md`, though it is currently incomplete. See `demo.lua` for a usage example. Or look at [inv.lua](https://github.com/knector01/inv.lua) to see it used in an actual program.
+Documentation is provided in the file `docs.md`, though it is currently incomplete. See `demo.lua` for a usage example, or look at [inv.lua](https://github.com/knector01/inv.lua) to see the library used in a full program.
