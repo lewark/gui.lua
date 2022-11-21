@@ -13,7 +13,7 @@ TABLE = "{.*}"
 PARAM_RE = re.compile("[, ]+")
 SIMPLE_RE = re.compile("local +("+ALPHA+") += +"+TABLE)
 FIELD_RE = re.compile("("+ALPHA+")\.("+ALPHA+") += +")
-METHOD_RE = re.compile("function +("+ALPHA+"):("+ALPHA+") *\(([a-zA-Z_, ]*)\)")
+METHOD_RE = re.compile("function +("+ALPHA+"):("+ALPHA+") *\(([a-zA-Z_,. ]*)\)")
 SUBCLASS_RE = re.compile("local +("+ALPHA+") += +("+ALPHA+"):subclass")
 
 FILES = [
