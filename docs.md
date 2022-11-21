@@ -141,7 +141,7 @@ Event consumption is mainly useful for mouse_click and mouse_scroll.
 
 Inheritance: [Container](#container) > [Widget](#widget) > [Object](#object)
 
-Base class for all widgets that can contain other gui.
+Base class for all widgets that can contain other gui widgets.
 
 ### Container(root)
 
