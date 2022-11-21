@@ -7,10 +7,10 @@ local TextArea = Widget:subclass()
 -- TextArea constructor.
 --
 -- Parameters:
--- - root: The root widget
--- - cols: The preferred width of the text area
--- - rows: The preferred height of the text area
--- - text: Initial contents of the text area
+-- - root (Root): The root widget
+-- - cols (int): The preferred width of the text area
+-- - rows (int): The preferred height of the text area
+-- - text (string): Initial contents of the text area
 function TextArea:init(root,cols,rows,text)
     -- TODO: rewrite, use virtual lines for text wrapping
     --        and allow wrapping to be disabled

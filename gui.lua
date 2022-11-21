@@ -24,7 +24,6 @@ return {
     SpecialChars=Constants.SpecialChars,
     LinearAxis=Constants.LinearAxis,
     LinearAlign=Constants.LinearAlign,
-    BoxAlign=Constants.BoxAlign,
     Object=Object,
     Widget=Widget,
     Container=Container,
