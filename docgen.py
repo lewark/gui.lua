@@ -57,10 +57,8 @@ class LuaConstruct:
 
     def get_link_target(self):
         x = self.get_heading().lower()
-        x = x.replace(":","")
-        x = x.replace(",","")
-        x = x.replace("(","")
-        x = x.replace(")","")
+        for c in ":,()":
+            x = x.replace(c,"")
         x = x.replace(" ","-")
         return "#" + x
 
@@ -190,10 +188,15 @@ def read_file(filename, classes):
 classes = []
 for file in FILES:
     read_file("gui/" + file + ".lua", classes)
-#outfile = open("docs.md","w",encoding="utf-8")
-outfile = sys.stdout
-outfile.write("# gui.lua\n\n")
-write_contents(outfile, classes)
+
+out = sys.stdout
+if len(sys.argv) == 2:
+    out = open(sys.argv[1],"w",encoding="utf-8")
+
+out.write("# gui.lua\n\n")
+write_contents(out, classes)
 for c in classes:
-    c.write(outfile)
-#outfile.close()
+    c.write(out)
+
+if out != sys.stdout:
+    out.close()
