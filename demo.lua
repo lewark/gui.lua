@@ -1,17 +1,17 @@
 local gui = require('gui')
 
-local root = gui.Root:new()
+local root = gui.Root()
 
-local box = gui.LinearContainer:new(root,gui.LinearAxis.VERTICAL,1,1)
-local box2 = gui.LinearContainer:new(root,gui.LinearAxis.HORIZONTAL,0,0)
+local box = gui.LinearContainer(root,gui.LinearAxis.VERTICAL,1,1)
+local box2 = gui.LinearContainer(root,gui.LinearAxis.HORIZONTAL,0,0)
 
-local lbl = gui.Label:new(root,"Hello!")
-local btn1 = gui.Button:new(root,"Button 1")
-local btn2 = gui.Button:new(root,"Button 2")
-local btn3 = gui.Button:new(root,"Big Btn.")
-local field = gui.TextField:new(root,5,"TextField")
-local area = gui.ListBox:new(root,10,10,{})
-local sb = gui.ScrollBar:new(root,area)
+local lbl = gui.Label(root,"Hello!")
+local btn1 = gui.Button(root,"Button 1")
+local btn2 = gui.Button(root,"Button 2")
+local btn3 = gui.Button(root,"Big Btn.")
+local field = gui.TextField(root,5,"TextField")
+local area = gui.ListBox(root,10,10,{})
+local sb = gui.ScrollBar(root,area)
 
 for i=1,64 do
     table.insert(area.items,"Item "..tostring(i))

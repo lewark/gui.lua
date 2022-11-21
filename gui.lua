@@ -1,25 +1,35 @@
 -- gui.lua: GUI toolkit for ComputerCraft
 
---[[
-This code is provided under the ComputerCraft Public License.
-For full text of the license, see the LICENSE file or this address:
-https://github.com/knector01/gui.lua/blob/master/LICENSE
-]]
+local expect = require "cc.expect"
 
 local top_events = {"mouse_click","mouse_scroll"}
 local focus_events = {"mouse_up","mouse_drag","char","key","key_up","paste"}
 
+local Object = require "object"
+
+-- Various special characters provided by ComputerCraft:
+--
+-- MINIMIZE, MAXIMIZE, STRIPES, TRI_RIGHT, TRI_LEFT, TRI_UP, TRI_DOWN,
+-- ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, ARROW_LR, ARROW_UD
 local SpecialChars = {
     MINIMIZE=22,MAXIMIZE=23,STRIPES=127,
     TRI_RIGHT=16,TRI_LEFT=17,TRI_UP=30,TRI_DOWN=31,
     ARROW_UP=24,ARROW_DOWN=25,ARROW_RIGHT=26,ARROW_LEFT=27,ARROW_LR=29,ARROW_UD=18
 }
 
+-- Enum used to specify layouts within LinearContainers.
+-- - LinearAxis.HORIZONTAL: X axis
+-- - LinearAxis.VERTICAL: Y axis
 local LinearAxis = {HORIZONTAL=1,VERTICAL=2}
-local LinearAlign = {CENTER=0,START=1,END=2}
-local BoxAlign = {CENTER=0,TOP=1,BOTTOM=2,LEFT=3,RIGHT=4}
 
-local gui = {}
+-- Enum used to specify layouts within LinearContainers.
+-- - LinearAxis.CENTER: center the widget within its cell
+-- - LinearAxis.START: align the widget to the top (HORIZONTAL container) or left (VERTICAL) of its cell
+-- - LinearAxis.END: align the widget to the bottom (HORIZONTAL container) or right (VERTICAL) of its cell
+local LinearAlign = {CENTER=0,START=1,END=2}
+
+-- Currently unused.
+local BoxAlign = {CENTER=0,TOP=1,BOTTOM=2,LEFT=3,RIGHT=4}
 
 local function startswith(str,substr)
     return string.sub(str,1,#substr) == substr
@@ -32,105 +42,12 @@ local function contains(tbl,val)
     return false
 end
 
-local function getClassName(class)
-    for k,v in pairs(gui) do
-        if v == class then
-            return k
-        end
-    end
-    return nil
-end
-
-local function expectType(index, value, expType, offset)
-    local valType = type(value)
-    -- use offset=1 in init() so that error propagates up to new() calls
-    offset = offset or 0
-    
-    if valType == expType then
-        return value
-    end
-
-    local info = debug.getinfo(2+offset,"n")
-    
-    if info then
-        error("bad argument #"..index.." to '"..info.name.."' (expected "..expType..", got "..valType..")",3+offset)
-    else
-        error("bad argument #"..index.." (expected "..expType..", got "..valType..")",3+offset)
-    end
-end
-
-local function expectClass(index, value, class, allowNil, offset)
-    local valType = type(value)
-    -- use offset=1 in init() so that error propagates up to new() calls
-    offset = offset or 0
-    
-    if type(value) == "table" then
-        if value.class then
-            if value:instanceof(class) then
-                return value
-            end
-            
-            valType = getClassName(value.class)
-        end
-    elseif (value == nil) and allowNil then
-        return value
-    end
-
-    local desiredName = getClassName(class)
-    
-    local info = debug.getinfo(2+offset,"n")
-    
-    if info then
-        error("bad argument #"..index.." to '"..info.name.."' (expected "..desiredName..", got "..valType..")",3+offset)
-    else
-        error("bad argument #"..index.." (expected "..desiredName..", got "..valType..")",3+offset)
-    end
-end
-
--- OBJECT CLASS
--- Implements basic inheritance features.
-
-local Object = {}
-
--- Call new() to create an instance of any class.
--- Do not override this method. It will call the class's init() for you.
-function Object:new(...)
-    local instance = setmetatable({},{__index=self})
-    instance.class = self
-    instance:init(...)
-    return instance
-end
-
--- Call subclass() to create a subclass of an existing class.
-function Object:subclass()
-    return setmetatable({superClass=self},{__index=self})
-end
-
-function Object:instanceof(class)
-    expectType(1, class, "table")
-    local c = self.class
-    while c ~= nil do
-        if c == class then
-            return true
-        end
-        c = c.superClass
-    end
-    return false
-end
-
--- The object's constructor. Override this method to initialize an Object subclass.
--- init() parameters will be passed in from new().
--- An object's init() may also call its super class's init() if desired.
---   Use ClassName.superClass.init(self,...)
--- This method should only be called from within new() or a subclass's init().
-function Object:init(...) end
-
--- WIDGET CLASSES
-
+-- Base class for GUI elements.
 local Widget = Object:subclass()
 
+-- Widget constructor.
 function Widget:init(root)
-    expectClass(1, root, Widget, true, 1)
+    expect(1, root, "table", "nil")
     self.size = {0,0}
     self.pos = {1,1}
     self.layout = {}
@@ -139,9 +56,10 @@ function Widget:init(root)
     self.root = root
 end
 
+-- Returns true if the coordinates x, y are within the widget's bounding box. 
 function Widget:containsPoint(x,y)
-    expectType(1, x, "number")
-    expectType(2, y, "number")
+    expect(1, x, "number")
+    expect(2, y, "number")
     return (
         x >= self.pos[1] and 
         x < self.pos[1]+self.size[1] and 
@@ -150,6 +68,7 @@ function Widget:containsPoint(x,y)
     )
 end
 
+-- Event handler called when the GUI is repainted. 
 function Widget:onRedraw()
     if self.dirty then
         self:render()
@@ -157,10 +76,12 @@ function Widget:onRedraw()
     end
 end
 
+-- Event handler called when the widget's layout is updated. 
 function Widget:onLayout()
     self.dirty = true
 end
 
+-- Returns the widget's preferred minimum size.
 function Widget:getPreferredSize()
     return {0, 0}
 end
@@ -170,23 +91,31 @@ function Widget:render() end
 -- Post-render callback for focused widget. Used to position text field cursor.
 function Widget:focusPostRender() end
 
--- Widget event handlers. Override these to provide custom behavior
+-- Event handler called when a key is pressed or held and the widget is in focus.
 function Widget:onKeyDown(key,held) return true end
+-- Event handler called when a key is released and the widget is in focus.
 function Widget:onKeyUp(key) return true end
+-- Event handler called when a character is typed and the widget is in focus.
 function Widget:onCharTyped(chr) return true end
+-- Event handler called when text is pasted and the widget is in focus.
 function Widget:onPaste(text) return true end
+-- Event handler called when a mouse button is released and the widget is in focus.
 function Widget:onMouseDown(btn,x,y) return true end
+-- Event handler called when a mouse button is pressed over the widget.
 function Widget:onMouseUp(btn,x,y) return true end
+-- Event handler called when the mouse wheel is scrolled over the widget.
 function Widget:onMouseScroll(dir,x,y) return true end
+-- Event handler called when the widget is dragged.
 function Widget:onMouseDrag(btn,x,y) return true end
+-- Event handler called when the widget enters or leaves focus.
 function Widget:onFocus(focused) return true end
 
 -- Handles any input events recieved by the widget and passes them to
--- the appropriate callback functions
--- return true from an event callback to consume the event
--- (mainly useful for mouse_click and mouse_scroll)
+-- the appropriate handler functions. Return true from an event handler
+-- to consume the event and prevent it from being passed on to other widgets.
+-- Event consumption is mainly useful for mouse_click and mouse_scroll.
 function Widget:onEvent(evt)
-    expectType(1, evt, "table")
+    expect(1, evt, "table")
     if evt[1] == "mouse_drag" then
         return self:onMouseDrag(evt[2],evt[3],evt[4])
     elseif evt[1] == "mouse_up" then
@@ -210,19 +139,19 @@ function Widget:onEvent(evt)
     return false
 end
 
--- CONTAINER CLASSES
-
--- Container: Base class for all widgets that can contain other widgets
+-- Base class for all widgets that can contain other widgets.
 local Container = Widget:subclass()
 
+-- Container constructor.
 function Container:init(root)
-    expectClass(1, root, Widget, true, 1)
+    expect(1, root, "table", "nil")
     Container.superClass.init(self,root)
     self.children = {}
 end
 
+-- Add a child widget to the Container.
 function Container:addChild(child,...)
-    expectClass(1, child, Widget)
+    expect(1, child, "table")
     table.insert(self.children,child)
 end
 
@@ -234,7 +163,7 @@ function Container:onRedraw()
 end
 
 function Container:onEvent(evt)
-    expectType(1, evt, "table")
+    expect(1, evt, "table")
     local ret = Container.superClass.onEvent(self,evt)
     if contains(top_events,evt[1]) then
         for i=#self.children,1,-1 do
@@ -262,11 +191,14 @@ function Container:onLayout()
     end
 end
 
+-- Lays out the container's children.
+-- Specialized behavior is provided by subclasses of Container.
 function Container:layoutChildren() end
 
--- Root: The root widget of the user interface. Handles focus, resizing, and other events.
+-- The root widget of the user interface. Handles focus, resizing, and other events.
 local Root = Container:subclass()
 
+-- Root constructor.
 function Root:init()
     Root.superClass.init(self,nil)
     self.focus = nil
@@ -274,6 +206,7 @@ function Root:init()
     self.backgroundColor = colors.lightGray
 end
 
+-- Called internally to render the root's first frame.
 function Root:show()
     self:onLayout()
     self:onRedraw()
@@ -287,7 +220,7 @@ function Root:onRedraw()
 end
 
 function Root:onEvent(evt)
-    expectType(1, evt, "table")
+    expect(1, evt, "table")
     local focus = self.focus
     local ret = Root.superClass.onEvent(self,evt)
     
@@ -315,8 +248,8 @@ function Root:onEvent(evt)
     return ret
 end
 
--- TODO: make rendering respect layers
 function Root:layoutChildren()
+    -- TODO: make rendering respect layers
     --for _,widget in pairs(self.children) do
     if #self.children >= 1 then
         local widget = self.children[1]
@@ -331,6 +264,7 @@ function Root:render()
     term.clear()
 end
 
+-- Shows the GUI and runs its event loop.
 function Root:mainLoop()
     self:show()
     while true do
@@ -346,36 +280,50 @@ function Root:mainLoop()
     term.clear()
 end
 
--- LinearContainer: Arranges child widgets in a horizontal or vertical line.
---   Padding at the edges and spacing between widgets can be specified.
---   Child widgets may be set to fill the major and/or minor axes of the container.
---   If multiple widgets are set to fill the major axis
---     then the free space will be evenly distributed between them.
+-- Container that arranges child widgets in a horizontal or vertical line.
+-- Padding at the edges and spacing between widgets can be specified.
+-- Child widgets may be set to fill the primary and/or secondary axes of the container.
+-- If multiple widgets are set to fill the primary axis, then the free space
+-- will be evenly distributed between them.
 local LinearContainer = Container:subclass()
 
+-- LinearContainer constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - axis (LinearAxis): The primary axis of this container (HORIZONAL or VERTICAL).
+-- - spacing (int): Spacing between contained widgets.
+-- - padding (int): Padding between the first/last widgets and the container's edge.
 function LinearContainer:init(root,axis,spacing,padding)
-    expectClass(1, root, Widget, false, 1)
-    expectType(2, axis, "number", 1)
-    expectType(3, spacing, "number", 1)
-    expectType(4, padding, "number", 1)
+    expect(1, root, "table")
+    expect(2, axis, "number")
+    expect(3, spacing, "number")
+    expect(4, padding, "number")
     LinearContainer.superClass.init(self,root)
     self.axis = axis
     self.spacing = spacing
     self.padding = padding
 end
 
-function LinearContainer:addChild(child,fillMajor,fillMinor,align)
-    expectClass(1, child, Widget)
-    expectType(2, fillMajor, "boolean")
-    expectType(3, fillMinor, "boolean")
-    expectType(4, align, "number")
+-- Adds a widget to the LinearContainer
+--
+-- Parameters:
+-- - child (Widget): the widget to add
+-- - fillPrimary (bool): whether the widget should fill the main axis specified in the constructor
+-- - fillSecondary (bool): whether the widget should fill the other axis perpendicular to the primary one
+-- - align (LinearAlign): whether the widget should be centered, left-aligned, or right-aligned
+function LinearContainer:addChild(child,fillPrimary,fillSecondary,align)
+    expect(1, child, "table")
+    expect(2, fillPrimary, "boolean")
+    expect(3, fillSecondary, "boolean")
+    expect(4, align, "number")
     LinearContainer.superClass.addChild(self,child)
-    child.layout.fillMajor = fillMajor
-    child.layout.fillMinor = fillMinor
+    child.layout.fillPrimary = fillPrimary
+    child.layout.fillSecondary = fillSecondary
     child.layout.align = align
 end
 
-function LinearContainer:getMinorAxis()
+function LinearContainer:getSecondaryAxis()
     if self.axis == 1 then
         return 2
     end
@@ -383,7 +331,7 @@ function LinearContainer:getMinorAxis()
 end
 
 function LinearContainer:getPreferredSize()
-    local axis2 = self:getMinorAxis()
+    local axis2 = self:getSecondaryAxis()
     
     local prefSize = {self.padding * 2,self.padding * 2}
     for i=1,#self.children do
@@ -400,7 +348,7 @@ function LinearContainer:getPreferredSize()
 end
 
 function LinearContainer:layoutChildren()
-    local axis2 = self:getMinorAxis()
+    local axis2 = self:getSecondaryAxis()
     
     local space_free = self.size[self.axis] - self.padding * 2
     local childrenFill = 0
@@ -411,7 +359,7 @@ function LinearContainer:layoutChildren()
         local prefSize = child:getPreferredSize()
         table.insert(preferred_sizes, prefSize)
         
-        if child.layout.fillMajor then
+        if child.layout.fillPrimary then
             childrenFill = childrenFill + 1
         else
             space_free = space_free - prefSize[self.axis]
@@ -429,7 +377,7 @@ function LinearContainer:layoutChildren()
         local size = 0
         local prefSize = preferred_sizes[i]
         
-        if child.layout.fillMajor then
+        if child.layout.fillPrimary then
             fillCount = fillCount + 1
             
             size = math.max((math.floor(space_free * fillCount / childrenFill)
@@ -443,7 +391,7 @@ function LinearContainer:layoutChildren()
         
         local cell_size = self.size[axis2] - self.padding * 2
         
-        if child.layout.fillMinor then
+        if child.layout.fillSecondary then
             child.size[axis2] = cell_size
         else
             child.size[axis2] = math.min(prefSize[axis2],cell_size)
@@ -461,14 +409,17 @@ function LinearContainer:layoutChildren()
     end
 end
 
--- RENDERED WIDGET CLASSES
-
 -- A label. Can display custom text.
 local Label = Widget:subclass()
 
+-- Label constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - axis (string): Text to display on the Label.
 function Label:init(root,text)
-    expectClass(1, root, Widget, false, 1)
-    expectType(2, text, "string", 1)
+    expect(1, root, "table")
+    expect(2, text, "string")
     Label.superClass.init(self,root)
     self.text = text
     self.backgroundColor = colors.lightGray
@@ -496,9 +447,14 @@ end
 -- Button. Can be pushed, and will trigger a custom onPressed() callback.
 local Button = Widget:subclass()
 
+-- Button constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - axis (string): Text to display on the Button.
 function Button:init(root,text)
-    expectClass(1, root, Widget, false, 1)
-    expectType(2, text, "string", 1)
+    expect(1, root, "table")
+    expect(2, text, "string")
     Button.superClass.init(self,root)
     self.text = text
     self.color = colors.blue
@@ -509,7 +465,8 @@ function Button:init(root,text)
     self.enabled = true
 end
 
--- ***Override this method on a Button instance to set behavior***
+-- Event handler called when a Button is pressed.
+-- Override this method on a Button instance to set its behavior.
 function Button:onPressed() end
 
 function Button:getPreferredSize()
@@ -585,14 +542,20 @@ function Button:onFocus(focused)
     return true
 end
 
--- A text field. You can type text in it.
-TextField = Widget:subclass()
+-- A text field that allows users to type text within it.
+local TextField = Widget:subclass()
 
--- TODO: Add auto-completion
+-- TextField constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - length (int): Width of the text field in characters.
+-- - text (string): Initial contents of the TextField.
 function TextField:init(root,length,text)
-    expectClass(1, root, Widget, false, 1)
-    expectType(2, length, "number", 1)
-    expectType(3, text, "string", 1)
+    -- TODO: Add auto-completion
+    expect(1, root, "table")
+    expect(2, length, "number")
+    expect(3, text, "string")
     TextField.superClass.init(self,root)
     
     self.text = text
@@ -605,7 +568,20 @@ function TextField:init(root,length,text)
     self.scroll = 0
 end
 
+-- Event handler called when the text in a TextField is edited.
+-- Override this method on an instance to set custom behavior.
 function TextField:onChanged() end
+
+-- Sets the text within the TextField
+function TextField:setText(text)
+    self.text = text
+    self.dirty = true
+end
+
+-- Gets the text within the TextField
+function TextField:getText()
+    return self.text
+end
 
 function TextField:getPreferredSize()
     return {self.length,1}
@@ -643,7 +619,7 @@ function TextField:render()
 end
 
 function TextField:moveCursor(newPos)
-    expectType(1, newPos, "number")
+    expect(1, newPos, "number")
     self.char = math.min(math.max(newPos,1),#self.text+1)
     if self.char-self.scroll > self.size[1] then
         self.scroll = self.char - self.size[1]
@@ -718,10 +694,10 @@ function TextField:onMouseDrag(button, x, y)
     return true
 end
 
--- TODO: Add area selection
 function TextField:mouseSelect(x, y)
-    expectType(1, x, "number")
-    expectType(2, y, "number")
+    -- TODO: Add area selection
+    expect(1, x, "number")
+    expect(2, y, "number")
     self:moveCursor(x - self.pos[1] + 1 + self.scroll)
     self.dirty = true
 end
@@ -729,13 +705,20 @@ end
 -- A text area for editing multi-line text. Very buggy.
 -- TODO: rewrite, use virtual lines for text wrapping
 --        also allow wrapping to be disabled
-TextArea = Widget:subclass()
+local TextArea = Widget:subclass()
 
+-- TextArea constructor.
+--
+-- Parameters:
+-- - root: The root widget
+-- - cols: The preferred width of the text area
+-- - rows: The preferred height of the text area
+-- - text: Initial contents of the text area
 function TextArea:init(root,cols,rows,text)
-    expectClass(1, root, Widget, false, 1)
-    expectType(2, cols, "number", 1)
-    expectType(3, rows, "number", 1)
-    expectType(4, text, "string", 1)
+    expect(1, root, "table")
+    expect(2, cols, "number")
+    expect(3, rows, "number")
+    expect(4, text, "string")
     TextArea.superClass.init(self,root)
     
     self:setText(text)
@@ -751,22 +734,25 @@ function TextArea:getPreferredSize()
     return {self.cols, self.rows}
 end
 
--- BUG: double newlines are combined
+-- Sets the text within the text area.
 function TextArea:setText(text)
-    expectType(1, text, "string")
+    -- BUG: double newlines are combined
+    expect(1, text, "string")
     self.text = {}
     for line in text:gmatch("[^\r?\n]+") do
         table.insert(self.text,line)
     end
+    self.dirty = true
 end
 
+-- Gets the text within the text area.
 function TextArea:getText()
     return table.concat(self.text,"\n")
 end
 
--- TODO: add scrolling
--- BUG: cursor does not render at width
 function TextArea:render()
+    -- TODO: add scrolling
+    -- BUG: cursor does not render at width
     term.setTextColor(self.textColor)
     term.setBackgroundColor(self.color)
     
@@ -814,8 +800,8 @@ function TextArea:render()
     end
 end
 
--- TODO: Add DELETE key, fix up/down behavior with wrapped strings
 function TextArea:onKeyDown(key,held)
+    -- TODO: Add DELETE key, fix up/down behavior with wrapped strings
     if key == keys.backspace then
         if (self.charY > 1) and (self.charX == 1) then
             local text = table.remove(self.text,self.charY)
@@ -909,11 +895,11 @@ function TextArea:onMouseDrag(button, x, y)
     return true
 end
 
--- TODO: Add area selection
--- BUG: Off-by-one error, behaves wrongly when a line is exactly the widget width
 function TextArea:mouseSelect(x, y)
-    expectType(1, x, "number")
-    expectType(2, y, "number")
+    -- TODO: Add area selection
+    -- BUG: Off-by-one error, behaves wrongly when a line is exactly the widget width
+    expect(1, x, "number")
+    expect(2, y, "number")
     local myX,myY = self.pos[1],self.pos[2]
     local t_y = 1
     self.charY = 0
@@ -934,23 +920,24 @@ function TextArea:mouseSelect(x, y)
     self.dirty = true
 end
 
+-- Base class for scrollable widgets
 local ScrollWidget = Widget:subclass()
 
 function ScrollWidget:init(root)
-    expectClass(1, root, Widget, false, 1)
+    expect(1, root, "table")
     ScrollWidget.superClass.init(self,root)
     self.scroll = 0
     self.scrollSpeed = 3
     self.scrollbar = nil
 end
 
--- Override this function to set the scroll range
+-- Returns the scroll range of the widget
 function ScrollWidget:getMaxScroll()
     return 0
 end
 
 function ScrollWidget:setScroll(scroll)
-    expectType(1, scroll, "number")
+    expect(1, scroll, "number")
     local maxScroll = self:getMaxScroll()
     if scroll > maxScroll then
         scroll = maxScroll
@@ -977,11 +964,18 @@ end
 --   widget, and is able to efficiently display large amounts of items.
 local ListBox = ScrollWidget:subclass()
 
+-- ListBox constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - cols (int): The preferred width of the ListBox
+-- - rows (int): The preferred height of the ListBox
+-- - items (string[]): Items contained within the ListBox
 function ListBox:init(root,cols,rows,items)
-    expectClass(1, root, Widget, false, 1)
-    expectType(2, cols, "number", 1)
-    expectType(3, rows, "number", 1)
-    expectType(4, items, "table", 1)
+    expect(1, root, "table")
+    expect(2, cols, "number")
+    expect(3, rows, "number")
+    expect(4, items, "table")
     ListBox.superClass.init(self,root)
     self.items = items
     self.cols = cols
@@ -1026,11 +1020,12 @@ function ListBox:onLayout()
     self:setScroll(self.scroll)
 end
 
--- Override this method to receive selection events
+-- Event handler called when the selected item is changed.
+-- Override this method to receive selection events.
 function ListBox:onSelectionChanged() end
 
 function ListBox:setSelected(n)
-    expectType(1, n, "number")
+    expect(1, n, "number")
     n = math.min(math.max(n,1),#self.items)
     if self.selected ~= n then
         self.selected = n
@@ -1048,8 +1043,8 @@ function ListBox:getMaxScroll()
 end
 
 function ListBox:mouseSelect(x,y)
-    expectType(1, x, "number")
-    expectType(2, y, "number")
+    expect(1, x, "number")
+    expect(2, y, "number")
     self:setSelected(y-self.pos[2]+self.scroll+1)
     self.dirty = true
 end
@@ -1085,10 +1080,15 @@ end
 -- Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 local ScrollBar = Widget:subclass()
 
--- todo: add horizontal scrollbars
+-- ScrollBar constructor.
+--
+-- Parameters:
+-- - root (Root): The root widget
+-- - scrollWidget (ScrollWidget): The widget this ScrollBar should scroll
 function ScrollBar:init(root,scrollWidget)
-    expectClass(1, root, Widget, false, 1)
-    expectClass(2, scrollWidget, ScrollWidget, false, 1)
+    -- todo: add horizontal scrollbars
+    expect(1, root, "table")
+    expect(2, scrollWidget, "table")
     ScrollBar.superClass.init(self,root)
     self.scrollWidget = scrollWidget
     scrollWidget.scrollbar = self
@@ -1122,9 +1122,9 @@ function ScrollBar:getBarHeight()
     return math.max(math.floor((self.size[2]-2)*self.scrollWidget.size[2]/(maxScroll+self.scrollWidget.size[2])+0.5),1)
 end
 
--- kinda odd that the code to render a scrollbar is much longer
--- than that to render a list box (the thing you actually care about)
 function ScrollBar:render()
+    -- kinda odd that the code to render a scrollbar is much longer
+    -- than that to render a list box (the thing you actually care about)
     local enabled = self:canScroll()
     local barColor = self.barColor
     
@@ -1191,9 +1191,9 @@ function ScrollBar:onMouseScroll(dir, x, y)
     return true
 end
 
--- BUG: can sometimes scroll to invalid locations on edge cases (3 unit tall scrollbar)
--- todo: add timer to repeat buttons on hold
 function ScrollBar:onMouseDown(btn, x, y)
+    -- BUG: can sometimes scroll to invalid locations on edge cases (3 unit tall scrollbar)
+    -- todo: add timer to repeat buttons on hold
     if self:canScroll() then
         if y == self.pos[2] then
             self.drag = 4
@@ -1243,9 +1243,9 @@ end
 --     ScrollContainer, Image, TabContainer, MenuBar
 
 -- TODO: Improve this interface
-gui = {SpecialChars=SpecialChars,LinearAxis=LinearAxis,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
+
+return {SpecialChars=SpecialChars,LinearAxis=LinearAxis,LinearAlign=LinearAlign,BoxAlign=BoxAlign,
     Object=Object,Widget=Widget,Container=Container,Root=Root,
     LinearContainer=LinearContainer,Label=Label,Button=Button,
     TextField=TextField,TextArea=TextArea,ScrollWidget=ScrollWidget,
     ListBox=ListBox,ScrollBar=ScrollBar}
-return gui
