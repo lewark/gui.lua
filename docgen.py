@@ -1,12 +1,13 @@
 import sys
 import re
 
-# TODO: Add table of contents and links
+# TODO: Add dynamic links in text
+# TODO: Grab types from expect calls
 
 SHOW_UNDOC_OVERRIDES = False
 ALWAYS_SHOW = ["init"]
 
-LINK_REM_RE = re.compile("[:,]+")
+#LINK_REM_RE = re.compile("[:,]+")
 PARAM_RE = re.compile("[, ]+")
 
 def format_block(block):
@@ -17,6 +18,12 @@ def get_by_name(name, arr):
         if item.name == name:
             return item
 
+def write_contents(stream, classes):
+    stream.write("## Contents\n\n")
+    for c in classes:
+        stream.write("- [{0}]({1})\n".format(c.get_heading(), c.get_link()))
+    stream.write("\n")
+
 class LuaConstruct:
     def __init__(self, name, description):
         self.name = name
@@ -26,8 +33,9 @@ class LuaConstruct:
         return self.name
 
     def get_link(self):
-        x = self.get_heading()
-        x = LINK_RM_RE.replace(x,"")
+        x = self.get_heading().lower()
+        x = x.replace(":","")
+        x = x.replace(",","")
         x = x.replace(" ","-")
         return "#" + x
 
@@ -139,11 +147,12 @@ def read_file(filename, classes):
             block.clear()
 
 classes = []
-read_file("object.lua",classes)
-read_file("gui.lua",classes)
+read_file("object.lua", classes)
+read_file("gui.lua", classes)
 #outfile = open("docs.md","w",encoding="utf-8")
 outfile = sys.stdout
 outfile.write("# gui.lua\n\n")
+write_contents(outfile, classes)
 for c in classes:
     c.write(outfile)
 #outfile.close()

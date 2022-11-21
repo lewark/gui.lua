@@ -1,8 +1,33 @@
 # gui.lua
 
+## Contents
+
+- [Object](#object)
+- [SpecialChars](#specialchars)
+- [LinearAxis](#linearaxis)
+- [LinearAlign](#linearalign)
+- [BoxAlign](#boxalign)
+- [Widget](#widget)
+- [Container](#container)
+- [Root](#root)
+- [LinearContainer](#linearcontainer)
+- [Label](#label)
+- [Button](#button)
+- [TextField](#textfield)
+- [TextArea](#textarea)
+- [ScrollWidget](#scrollwidget)
+- [ListBox](#listbox)
+- [ScrollBar](#scrollbar)
+
 ## Object
 
 Implements basic inheritance features.
+
+### Object(...)
+
+Object constructor. Override this method to initialize an Object subclass.
+To create an instance of an object, use Object(args), which will then call its init() method to set up the instance.
+An object's init() method may call its super class's init() if desired (use ClassName.superClass.init(self,...))
 
 ### Object:subclass()
 
@@ -11,12 +36,6 @@ Call subclass() to create a subclass of an existing class.
 ### Object:instanceof(class)
 
 Returns true if the Object is an instance of the provided class or a subclass.
-
-### Object(...)
-
-The object's constructor. Override this method to initialize an Object subclass.
-To create an instance of an object, use Object(args), which will then call this constructor method to set up the instance.
-An object's init() method may also call its super class's init() if desired (use ClassName.superClass.init(self,...))
 
 ## SpecialChars
 

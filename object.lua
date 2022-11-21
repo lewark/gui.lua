@@ -14,6 +14,11 @@ local Object = {}
 
 setmetatable(Object, {__call=new})
 
+-- Object constructor. Override this method to initialize an Object subclass.
+-- To create an instance of an object, use Object(args), which will then call its init() method to set up the instance.
+-- An object's init() method may call its super class's init() if desired (use ClassName.superClass.init(self,...))
+function Object:init(...) end
+
 -- Call subclass() to create a subclass of an existing class.
 function Object:subclass()
     return setmetatable({superClass=self},{__index=self,__call=new})
@@ -31,10 +36,5 @@ function Object:instanceof(class)
     end
     return false
 end
-
--- The object's constructor. Override this method to initialize an Object subclass.
--- To create an instance of an object, use Object(args), which will then call this constructor method to set up the instance.
--- An object's init() method may also call its super class's init() if desired (use ClassName.superClass.init(self,...))
-function Object:init(...) end
 
 return Object
