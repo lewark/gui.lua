@@ -9,12 +9,12 @@ ALWAYS_SHOW = ["init"]
 
 ALPHA = "[a-zA-Z_]+"
 TABLE = "{.*}"
-#LINK_REM_RE = re.compile("[:,]+")
+
 PARAM_RE = re.compile("[, ]+")
-SIMPLE_RE = re.compile("local.+"+ALPHA+".+=.+"+TABLE)
-FIELD_RE = re.compile(ALPHA+"\."+ALPHA+".+=.+")
-METHOD_RE = re.compile("function.+"+ALPHA)
-SUBCLASS_RE = re.compile("local.+"+ALPHA+".+=.+"+ALPHA+":subclass")
+SIMPLE_RE = re.compile("local +("+ALPHA+") += +"+TABLE)
+FIELD_RE = re.compile("("+ALPHA+")\.("+ALPHA+") += +")
+METHOD_RE = re.compile("function +("+ALPHA+"):("+ALPHA+") *\(([a-zA-Z_, ]*)\)")
+SUBCLASS_RE = re.compile("local +("+ALPHA+") += +("+ALPHA+"):subclass")
 
 FILES = [
     "Constants",
@@ -142,45 +142,32 @@ def read_file(filename, classes):
     block = []
     infile = open(filename,"r",encoding="utf-8")
     for line in infile.readlines():
+        match = None
         if not line:
             pass
         elif line.startswith("--"):
             block.append(line[2:].strip())
-        elif SIMPLE_RE.match(line):
-            class_name = line.split()[1]
-            if class_name[0].isupper():
-                c = LuaClass(class_name, format_block(block), None)
-                classes.append(c)
-                block.clear()
-        elif FIELD_RE.match(line):
-            x = line.split()[0].split(".")
-            class_name = x[0]
-            field_name = x[1]
-            print(class_name)
-            print(field_name)
+        elif match := SIMPLE_RE.match(line):
+            class_name = match.group(1)
+            c = LuaClass(class_name, format_block(block), None)
+            classes.append(c)
+            block.clear()
+        elif match := FIELD_RE.match(line):
+            class_name = match.group(1)
+            field_name = match.group(2)
             c = get_by_name(class_name, classes)
             f = LuaMember(field_name, format_block(block), c)
             block.clear()
-        elif SUBCLASS_RE.match(line):
-            tokens = line.split("=")
-            class_name = tokens[0]
-            
-            #if class_name.startswith("local "):
-            class_name = class_name[5:].strip()
-            #else:
-            #    print("WARNING: class " + class_name + " not declared local")
-            
-            super_name = tokens[1].strip().split(":")[0]
+        elif match := SUBCLASS_RE.match(line):
+            class_name = match.group(1)
+            super_name = match.group(2)
             c = LuaClass(class_name, format_block(block), get_by_name(super_name, classes))
             classes.append(c)
             block.clear()
-        elif METHOD_RE.match(line):
-            full_name = line.split()[1]
-            if "(" in full_name:
-                full_name = full_name[:full_name.index("(")]
-            params = PARAM_RE.split(line[line.index("(")+1:line.index(")")])
-            name = full_name[full_name.index(":")+1:]
-            class_name = full_name[:full_name.index(":")]
+        elif match := METHOD_RE.match(line):
+            class_name = match.group(1)
+            name = match.group(2)
+            params = PARAM_RE.split(match.group(3))
             c = get_by_name(class_name, classes)
             m = LuaMethod(name, format_block(block), c, params)
             block.clear()
