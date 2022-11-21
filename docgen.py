@@ -6,6 +6,9 @@ import re
 SHOW_UNDOC_OVERRIDES = False
 ALWAYS_SHOW = ["init"]
 
+LINK_REM_RE = re.compile("[:,]+")
+PARAM_RE = re.compile("[, ]+")
+
 def format_block(block):
     return "\n".join(block)
 
@@ -18,6 +21,15 @@ class LuaConstruct:
     def __init__(self, name, description):
         self.name = name
         self.description = description
+
+    def get_heading(self):
+        return self.name
+
+    def get_link(self):
+        x = self.get_heading()
+        x = LINK_RM_RE.replace(x,"")
+        x = x.replace(" ","-")
+        return "#" + x
 
 class LuaMethod(LuaConstruct):
     def __init__(self, name, description, parent_class, params):
@@ -38,6 +50,14 @@ class LuaMethod(LuaConstruct):
             if m and m.description:
                 return m.description
             c = c.super_class
+    
+    def get_heading(self):
+        x = [self.parent_class.name]
+        if self.name != "init":
+            x.extend((":",self.name))
+        p = ", ".join(self.params)
+        x.extend(("(",p,")"))
+        return "".join(x)
 
     def write(self, stream):
         if not SHOW_UNDOC_OVERRIDES and self.name not in ALWAYS_SHOW and not self.description:
@@ -47,7 +67,7 @@ class LuaMethod(LuaConstruct):
                 if get_by_name(self.name, c.methods):
                     return
                 c = c.super_class
-        stream.write("### "+self.parent_class.name+":"+self.name+"("+", ".join(self.params)+")\n\n")
+        stream.write("### "+self.get_heading()+"\n\n")
         desc = self.get_description()
         if desc:
             stream.write(desc+"\n\n")
@@ -81,7 +101,6 @@ class LuaClass(LuaConstruct):
 def read_file(filename, classes):
     block = []
     infile = open(filename,"r",encoding="utf-8")
-    param_delimeter = re.compile("[, ]+")
     for line in infile.readlines():
         if line.startswith("--"):
             block.append(line[2:].strip())
@@ -108,7 +127,7 @@ def read_file(filename, classes):
             full_name = line.split()[1]
             if "(" in full_name:
                 full_name = full_name[:full_name.index("(")]
-            params = param_delimeter.split(line[line.index("(")+1:line.index(")")])
+            params = PARAM_RE.split(line[line.index("(")+1:line.index(")")])
             name = full_name[full_name.index(":")+1:]
             class_name = full_name[:full_name.index(":")]
             c = get_by_name(class_name, classes)
@@ -118,7 +137,7 @@ def read_file(filename, classes):
             pass
         else:
             block.clear()
-            
+
 classes = []
 read_file("object.lua",classes)
 read_file("gui.lua",classes)

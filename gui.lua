@@ -45,9 +45,7 @@ end
 -- Base class for GUI elements.
 local Widget = Object:subclass()
 
--- Widget constructor. This should not be called directly.
--- To instantiate a widget for a GUI use Widget(args), which creates
--- the object and passes the arguments to its init method.
+-- Widget constructor.
 function Widget:init(root)
     expect(1, root, "table", "nil")
     self.size = {0,0}
@@ -282,20 +280,20 @@ function Root:mainLoop()
     term.clear()
 end
 
--- LinearContainer: Arranges child widgets in a horizontal or vertical line.
---   Padding at the edges and spacing between widgets can be specified.
---   Child widgets may be set to fill the major and/or minor axes of the container.
---   If multiple widgets are set to fill the major axis,
---     then the free space will be evenly distributed between them.
+-- Container that arranges child widgets in a horizontal or vertical line.
+-- Padding at the edges and spacing between widgets can be specified.
+-- Child widgets may be set to fill the primary and/or secondary axes of the container.
+-- If multiple widgets are set to fill the primary axis, then the free space
+-- will be evenly distributed between them.
 local LinearContainer = Container:subclass()
 
--- LinearContainer constructor. Don't call this directly. Use LinearContainer(root, axis, spacing, padding)).
+-- LinearContainer constructor.
 --
 -- Parameters:
 -- - root (Root): The root widget
--- - axis (LinearAxis): Which axis (HORIZONAL or VERTICAL) this container lies along.
--- - spacing: Spacing between contained widgets.
--- - padding: Padding between the first/last widgets and the container's edge.
+-- - axis (LinearAxis): The primary axis of this container (HORIZONAL or VERTICAL).
+-- - spacing (int): Spacing between contained widgets.
+-- - padding (int): Padding between the first/last widgets and the container's edge.
 function LinearContainer:init(root,axis,spacing,padding)
     expect(1, root, "table")
     expect(2, axis, "number")
@@ -580,6 +578,7 @@ function TextField:setText(text)
     self.dirty = true
 end
 
+-- Gets the text within the TextField
 function TextField:getText()
     return self.text
 end
@@ -709,6 +708,7 @@ end
 local TextArea = Widget:subclass()
 
 -- TextArea constructor.
+--
 -- Parameters:
 -- - root: The root widget
 -- - cols: The preferred width of the text area

@@ -12,7 +12,7 @@ Call subclass() to create a subclass of an existing class.
 
 Returns true if the Object is an instance of the provided class or a subclass.
 
-### Object:init(...)
+### Object(...)
 
 The object's constructor. Override this method to initialize an Object subclass.
 To create an instance of an object, use Object(args), which will then call this constructor method to set up the instance.
@@ -48,11 +48,9 @@ Inheritance: Widget > Object
 
 Base class for GUI elements.
 
-### Widget:init(root)
+### Widget(root)
 
-Widget constructor. This should not be called directly.
-To instantiate a widget for a GUI use Widget(args), which creates
-the object and passes the arguments to its init method.
+Widget constructor.
 
 ### Widget:containsPoint(x, y)
 
@@ -127,7 +125,7 @@ Inheritance: Container > Widget > Object
 
 Base class for all widgets that can contain other widgets.
 
-### Container:init(root)
+### Container(root)
 
 Container constructor.
 
@@ -146,7 +144,7 @@ Inheritance: Root > Container > Widget > Object
 
 The root widget of the user interface. Handles focus, resizing, and other events.
 
-### Root:init()
+### Root()
 
 Root constructor.
 
@@ -162,21 +160,21 @@ Shows the GUI and runs its event loop.
 
 Inheritance: LinearContainer > Container > Widget > Object
 
-LinearContainer: Arranges child widgets in a horizontal or vertical line.
+Container that arranges child widgets in a horizontal or vertical line.
 Padding at the edges and spacing between widgets can be specified.
-Child widgets may be set to fill the major and/or minor axes of the container.
-If multiple widgets are set to fill the major axis,
-then the free space will be evenly distributed between them.
+Child widgets may be set to fill the primary and/or secondary axes of the container.
+If multiple widgets are set to fill the primary axis, then the free space
+will be evenly distributed between them.
 
-### LinearContainer:init(root, axis, spacing, padding)
+### LinearContainer(root, axis, spacing, padding)
 
-LinearContainer constructor. Don't call this directly. Use LinearContainer(root, axis, spacing, padding)).
+LinearContainer constructor.
 
 Parameters:
 - root (Root): The root widget
-- axis (LinearAxis): Which axis (HORIZONAL or VERTICAL) this container lies along.
-- spacing: Spacing between contained widgets.
-- padding: Padding between the first/last widgets and the container's edge.
+- axis (LinearAxis): The primary axis of this container (HORIZONAL or VERTICAL).
+- spacing (int): Spacing between contained widgets.
+- padding (int): Padding between the first/last widgets and the container's edge.
 
 ### LinearContainer:addChild(child, fillPrimary, fillSecondary, align)
 
@@ -196,7 +194,7 @@ Inheritance: Label > Widget > Object
 
 A label. Can display custom text.
 
-### Label:init(root, text)
+### Label(root, text)
 
 Label constructor.
 
@@ -210,7 +208,7 @@ Inheritance: Button > Widget > Object
 
 Button. Can be pushed, and will trigger a custom onPressed() callback.
 
-### Button:init(root, text)
+### Button(root, text)
 
 Button constructor.
 
@@ -229,7 +227,7 @@ Inheritance: TextField > Widget > Object
 
 A text field that allows users to type text within it.
 
-### TextField:init(root, length, text)
+### TextField(root, length, text)
 
 TextField constructor.
 
@@ -249,6 +247,8 @@ Sets the text within the TextField
 
 ### TextField:getText()
 
+Gets the text within the TextField
+
 ### TextField:isCursorVisible()
 
 ### TextField:moveCursor(newPos)
@@ -263,9 +263,10 @@ A text area for editing multi-line text. Very buggy.
 TODO: rewrite, use virtual lines for text wrapping
 also allow wrapping to be disabled
 
-### TextArea:init(root, cols, rows, text)
+### TextArea(root, cols, rows, text)
 
 TextArea constructor.
+
 Parameters:
 - root: The root widget
 - cols: The preferred width of the text area
@@ -288,11 +289,9 @@ Inheritance: ScrollWidget > Widget > Object
 
 Base class for scrollable widgets
 
-### ScrollWidget:init(root)
+### ScrollWidget(root)
 
-Widget constructor. This should not be called directly.
-To instantiate a widget for a GUI use Widget(args), which creates
-the object and passes the arguments to its init method.
+Widget constructor.
 
 ### ScrollWidget:getMaxScroll()
 
@@ -308,7 +307,7 @@ List box. Allows an array of choices to be displayed, one of which can be
 selected at a time. Can be scrolled using the mouse wheel or a ScrollBar
 widget, and is able to efficiently display large amounts of items.
 
-### ListBox:init(root, cols, rows, items)
+### ListBox(root, cols, rows, items)
 
 ListBox constructor.
 
@@ -333,7 +332,7 @@ Inheritance: ScrollBar > Widget > Object
 
 Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 
-### ScrollBar:init(root, scrollWidget)
+### ScrollBar(root, scrollWidget)
 
 ScrollBar constructor.
 
