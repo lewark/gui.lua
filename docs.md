@@ -206,7 +206,7 @@ Parameters:
 
 Inheritance: [Label](#label) > [Widget](#widget) > [Object](#object)
 
-A label. Can display custom text.
+Displays custom text.
 
 ### Label(root, text)
 
@@ -214,13 +214,13 @@ Label constructor.
 
 Parameters:
 - root (Root): The root widget
-- axis (string): Text to display on the Label.
+- text (string): Text to display on the Label.
 
 ## Button
 
 Inheritance: [Button](#button) > [Widget](#widget) > [Object](#object)
 
-Button. Can be pushed, and will trigger a custom onPressed() callback.
+Can be clicked using the mouse, triggering a custom onPressed() callback.
 
 ### Button(root, text)
 
@@ -228,7 +228,7 @@ Button constructor.
 
 Parameters:
 - root (Root): The root widget
-- axis (string): Text to display on the Button.
+- text (string): Text to display on the Button.
 
 ### Button:onPressed()
 
@@ -273,9 +273,7 @@ Gets the text within the TextField
 
 Inheritance: [TextArea](#textarea) > [Widget](#widget) > [Object](#object)
 
-A text area for editing multi-line text. Very buggy.
-TODO: rewrite, use virtual lines for text wrapping
-and allow wrapping to be disabled
+A text area for editing multi-line text. Unfinished.
 
 ### TextArea(root, cols, rows, text)
 

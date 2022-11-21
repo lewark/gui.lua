@@ -1,9 +1,7 @@
 local expect = require "cc.expect"
 local Widget = require "Widget"
 
--- A text area for editing multi-line text. Very buggy.
--- TODO: rewrite, use virtual lines for text wrapping
---        and allow wrapping to be disabled
+-- A text area for editing multi-line text. Unfinished.
 local TextArea = Widget:subclass()
 
 -- TextArea constructor.
@@ -14,6 +12,8 @@ local TextArea = Widget:subclass()
 -- - rows: The preferred height of the text area
 -- - text: Initial contents of the text area
 function TextArea:init(root,cols,rows,text)
+    -- TODO: rewrite, use virtual lines for text wrapping
+    --        and allow wrapping to be disabled
     expect(1, root, "table")
     expect(2, cols, "number")
     expect(3, rows, "number")

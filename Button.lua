@@ -1,14 +1,14 @@
 local expect = require "cc.expect"
 local Widget = require "Widget"
 
--- Button. Can be pushed, and will trigger a custom onPressed() callback.
+-- Can be clicked using the mouse, triggering a custom onPressed() callback.
 local Button = Widget:subclass()
 
 -- Button constructor.
 --
 -- Parameters:
 -- - root (Root): The root widget
--- - axis (string): Text to display on the Button.
+-- - text (string): Text to display on the Button.
 function Button:init(root,text)
     expect(1, root, "table")
     expect(2, text, "string")

@@ -1,14 +1,14 @@
 local expect = require "cc.expect"
 local Widget = require "Widget"
 
--- A label. Can display custom text.
+-- Displays custom text.
 local Label = Widget:subclass()
 
 -- Label constructor.
 --
 -- Parameters:
 -- - root (Root): The root widget
--- - axis (string): Text to display on the Label.
+-- - text (string): Text to display on the Label.
 function Label:init(root,text)
     expect(1, root, "table")
     expect(2, text, "string")
