@@ -59,6 +59,8 @@ class LuaConstruct:
         x = self.get_heading().lower()
         x = x.replace(":","")
         x = x.replace(",","")
+        x = x.replace("(","")
+        x = x.replace(")","")
         x = x.replace(" ","-")
         return "#" + x
 
