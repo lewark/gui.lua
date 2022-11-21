@@ -7,8 +7,30 @@ import re
 SHOW_UNDOC_OVERRIDES = False
 ALWAYS_SHOW = ["init"]
 
+ALPHA = "[a-zA-Z_]+"
+TABLE = "{.*}"
 #LINK_REM_RE = re.compile("[:,]+")
 PARAM_RE = re.compile("[, ]+")
+SIMPLE_RE = re.compile("local.+"+ALPHA+".+=.+"+TABLE)
+FIELD_RE = re.compile(ALPHA+"\."+ALPHA+".+=.+")
+METHOD_RE = re.compile("function.+"+ALPHA)
+SUBCLASS_RE = re.compile("local.+"+ALPHA+".+=.+"+ALPHA+":subclass")
+
+FILES = [
+    "Constants",
+    "Object",
+    "Widget",
+    "Container",
+    "Root",
+    "LinearContainer",
+    "Label",
+    "Button",
+    "TextField",
+    "TextArea",
+    "ScrollWidget",
+    "ListBox",
+    "ScrollBar",
+]
 
 def format_block(block):
     return "\n".join(block)
@@ -42,22 +64,29 @@ class LuaConstruct:
     def get_link(self):
         return "[{0}]({1})".format(self.get_heading(), self.get_link_target())
 
-class LuaMethod(LuaConstruct):
-    def __init__(self, name, description, parent_class, params):
+class LuaMember(LuaConstruct):
+    def __init__(self, name, description, parent_class):
         super().__init__(name, description)
-        #if name == "init":
-        #    name = "new"
-        self.params = params
         self.parent_class = parent_class
         if self.parent_class:
-            self.parent_class.methods.append(self)
+            self.parent_class.members.append(self)
+
+    def write(self, stream):
+        stream.write("### "+self.name+"\n\n")
+        if self.description:
+            stream.write(self.description+"\n\n")
+
+class LuaMethod(LuaMember):
+    def __init__(self, name, description, parent_class, params):
+        super().__init__(name, description, parent_class)
+        self.params = params
 
     def get_description(self):
         if self.description:
             return self.description
         c = self.parent_class
         while c:
-            m = get_by_name(self.name,c.methods)
+            m = get_by_name(self.name,c.members)
             if m and m.description:
                 return m.description
             c = c.super_class
@@ -75,7 +104,7 @@ class LuaMethod(LuaConstruct):
             c = self.parent_class.super_class
             found = False
             while c:
-                if get_by_name(self.name, c.methods):
+                if get_by_name(self.name, c.members):
                     return
                 c = c.super_class
         stream.write("### "+self.get_heading()+"\n\n")
@@ -86,7 +115,7 @@ class LuaMethod(LuaConstruct):
 class LuaClass(LuaConstruct):
     def __init__(self, name, description, super_class):
         super().__init__(name, description)
-        self.methods = []
+        self.members = []
         self.super_class = super_class
 
     def write_hierarchy(self, stream):
@@ -105,7 +134,7 @@ class LuaClass(LuaConstruct):
             self.write_hierarchy(stream)
         if self.description:
             stream.write(self.description+"\n\n")
-        for m in self.methods:
+        for m in self.members:
             m.write(stream)
 
 
@@ -113,15 +142,26 @@ def read_file(filename, classes):
     block = []
     infile = open(filename,"r",encoding="utf-8")
     for line in infile.readlines():
-        if line.startswith("--"):
+        if not line:
+            pass
+        elif line.startswith("--"):
             block.append(line[2:].strip())
-        elif line.startswith("local") and "= {" in line:
+        elif SIMPLE_RE.match(line):
             class_name = line.split()[1]
             if class_name[0].isupper():
                 c = LuaClass(class_name, format_block(block), None)
                 classes.append(c)
                 block.clear()
-        elif line.startswith("local") and ":subclass" in line:
+        elif FIELD_RE.match(line):
+            x = line.split()[0].split(".")
+            class_name = x[0]
+            field_name = x[1]
+            print(class_name)
+            print(field_name)
+            c = get_by_name(class_name, classes)
+            f = LuaMember(field_name, format_block(block), c)
+            block.clear()
+        elif SUBCLASS_RE.match(line):
             tokens = line.split("=")
             class_name = tokens[0]
             
@@ -134,7 +174,7 @@ def read_file(filename, classes):
             c = LuaClass(class_name, format_block(block), get_by_name(super_name, classes))
             classes.append(c)
             block.clear()
-        elif line.startswith("function "):
+        elif METHOD_RE.match(line):
             full_name = line.split()[1]
             if "(" in full_name:
                 full_name = full_name[:full_name.index("(")]
@@ -144,14 +184,12 @@ def read_file(filename, classes):
             c = get_by_name(class_name, classes)
             m = LuaMethod(name, format_block(block), c, params)
             block.clear()
-        elif not line:
-            pass
         else:
             block.clear()
 
 classes = []
-read_file("object.lua", classes)
-read_file("gui.lua", classes)
+for file in FILES:
+    read_file(file + ".lua", classes)
 #outfile = open("docs.md","w",encoding="utf-8")
 outfile = sys.stdout
 outfile.write("# gui.lua\n\n")

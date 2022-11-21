@@ -1,12 +1,21 @@
+Constants
+TOP_EVENTS
+Constants
+FOCUS_EVENTS
+Constants
+SpecialChars
+Constants
+LinearAxis
+Constants
+LinearAlign
+Constants
+BoxAlign
 # gui.lua
 
 ## Contents
 
+- [Constants](#constants)
 - [Object](#object)
-- [SpecialChars](#specialchars)
-- [LinearAxis](#linearaxis)
-- [LinearAlign](#linearalign)
-- [BoxAlign](#boxalign)
 - [Widget](#widget)
 - [Container](#container)
 - [Root](#root)
@@ -18,6 +27,36 @@
 - [ScrollWidget](#scrollwidget)
 - [ListBox](#listbox)
 - [ScrollBar](#scrollbar)
+
+## Constants
+
+### TOP_EVENTS
+
+### FOCUS_EVENTS
+
+### SpecialChars
+
+Various special characters provided by ComputerCraft:
+
+MINIMIZE, MAXIMIZE, STRIPES, TRI_RIGHT, TRI_LEFT, TRI_UP, TRI_DOWN,
+ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, ARROW_LR, ARROW_UD
+
+### LinearAxis
+
+Enum used to specify layouts within LinearContainers.
+- LinearAxis.HORIZONTAL: X axis
+- LinearAxis.VERTICAL: Y axis
+
+### LinearAlign
+
+Enum used to specify layouts within LinearContainers.
+- LinearAxis.CENTER: center the widget within its cell
+- LinearAxis.START: align the widget to the top (HORIZONTAL container) or left (VERTICAL) of its cell
+- LinearAxis.END: align the widget to the bottom (HORIZONTAL container) or right (VERTICAL) of its cell
+
+### BoxAlign
+
+Currently unused.
 
 ## Object
 
@@ -44,30 +83,6 @@ Creates a subclass of an existing class.
 ### Object:instanceof(class)
 
 Returns true if the Object is an instance of the provided class or a subclass.
-
-## SpecialChars
-
-Various special characters provided by ComputerCraft:
-
-MINIMIZE, MAXIMIZE, STRIPES, TRI_RIGHT, TRI_LEFT, TRI_UP, TRI_DOWN,
-ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, ARROW_LR, ARROW_UD
-
-## LinearAxis
-
-Enum used to specify layouts within LinearContainers.
-- LinearAxis.HORIZONTAL: X axis
-- LinearAxis.VERTICAL: Y axis
-
-## LinearAlign
-
-Enum used to specify layouts within LinearContainers.
-- LinearAxis.CENTER: center the widget within its cell
-- LinearAxis.START: align the widget to the top (HORIZONTAL container) or left (VERTICAL) of its cell
-- LinearAxis.END: align the widget to the bottom (HORIZONTAL container) or right (VERTICAL) of its cell
-
-## BoxAlign
-
-Currently unused.
 
 ## Widget
 
@@ -288,7 +303,7 @@ Inheritance: [TextArea](#textarea) > [Widget](#widget) > [Object](#object)
 
 A text area for editing multi-line text. Very buggy.
 TODO: rewrite, use virtual lines for text wrapping
-also allow wrapping to be disabled
+and allow wrapping to be disabled
 
 ### TextArea(root, cols, rows, text)
 

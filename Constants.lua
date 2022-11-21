@@ -4,6 +4,7 @@ Constants.TOP_EVENTS = {
     ["mouse_click"] = true,
     ["mouse_scroll"] = true,
 }
+
 Constants.FOCUS_EVENTS = {
     ["mouse_up"] = true,
     ["mouse_drag"] = true,
