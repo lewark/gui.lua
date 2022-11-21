@@ -1,5 +1,7 @@
 import sys
 import re
+import argparse
+import os
 
 # TODO: Add dynamic links in text
 # TODO: Grab types from expect calls
@@ -16,7 +18,7 @@ FIELD_RE = re.compile("("+ALPHA+")\.("+ALPHA+") += +")
 METHOD_RE = re.compile("function +("+ALPHA+"):("+ALPHA+") *\(([a-zA-Z_,. ]*)\)")
 SUBCLASS_RE = re.compile("local +("+ALPHA+") += +("+ALPHA+"):subclass")
 
-FILES = [
+FILES = ["gui/"+x+".lua" for x in [
     "Constants",
     "Object",
     "Widget",
@@ -30,7 +32,7 @@ FILES = [
     "ScrollWidget",
     "ListBox",
     "ScrollBar",
-]
+]]
 
 def format_block(block):
     return "\n".join(block)
@@ -197,13 +199,19 @@ class Document:
             c.write(stream)
 
 if __name__ == "__main__":
-    doc = Document("gui.lua")
-    for file in FILES:
-        doc.read_file("gui/" + file + ".lua")
+    parser = argparse.ArgumentParser(description="Generate Markdown documentation for Lua modules")
+    parser.add_argument('files', metavar='FILE', nargs="+", help="Lua files to read from")
+    parser.add_argument('--out', metavar='OUT_FILE', help="File to write Markdown output into")
+    parser.add_argument('--title', metavar='TITLE', help="Title of the documentation file", default=os.path.basename(os.getcwd()))
+    args = parser.parse_args()
+
+    doc = Document(args.title)
+    for file in args.files:
+        doc.read_file(os.path.normpath(file))
 
     out = sys.stdout
-    if len(sys.argv) == 2:
-        out = open(sys.argv[1], "w", encoding="utf-8")
+    if args.out:
+        out = open(args.out, "w", encoding="utf-8")
 
     doc.write(out)
 
