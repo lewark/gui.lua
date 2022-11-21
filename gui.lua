@@ -1,38 +1,19 @@
 -- gui.lua: GUI toolkit for ComputerCraft
 
-local Constants = require "gui.Constants"
-local Object = require "gui.Object"
-local Widget = require "gui.Widget"
-local Container = require "gui.Container"
-local Root = require "gui.Root"
-local LinearContainer = require "gui.LinearContainer"
-local Label = require "gui.Label"
-local Button = require "gui.Button"
-local TextField = require "gui.TextField"
-local TextArea = require "gui.TextArea"
-local ScrollWidget = require "gui.ScrollWidget"
-local ListBox = require "gui.ListBox"
-local ScrollBar = require "gui.ScrollBar"
+local gui = {}
 
--- TODO:
--- Add BoxContainer, CheckBox, ComboBox, Slider,
---     ScrollContainer, Image, TabContainer, MenuBar
+gui.Constants = require "gui.Constants"
+gui.Object = require "gui.Object"
+gui.Widget = require "gui.Widget"
+gui.Container = require "gui.Container"
+gui.Root = require "gui.Root"
+gui.LinearContainer = require "gui.LinearContainer"
+gui.Label = require "gui.Label"
+gui.Button = require "gui.Button"
+gui.TextField = require "gui.TextField"
+gui.TextArea = require "gui.TextArea"
+gui.ScrollWidget = require "gui.ScrollWidget"
+gui.ListBox = require "gui.ListBox"
+gui.ScrollBar = require "gui.ScrollBar"
 
--- TODO: Improve this interface
-
-return {
-    SpecialChars=Constants.SpecialChars,
-    LinearAxis=Constants.LinearAxis,
-    LinearAlign=Constants.LinearAlign,
-    Object=Object,
-    Widget=Widget,
-    Container=Container,
-    Root=Root,
-    LinearContainer=LinearContainer,
-    Label=Label,Button=Button,
-    TextField=TextField,
-    TextArea=TextArea,
-    ScrollWidget=ScrollWidget,
-    ListBox=ListBox,
-    ScrollBar=ScrollBar
-}
+return gui
