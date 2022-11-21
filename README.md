@@ -16,7 +16,7 @@ The library can be installed using [gitget](https://www.computercraft.info/forum
 
 ```
 pastebin get W5ZkVYSi gitget
-gitget knector01 inv.lua inv inv
+gitget knector01 gui.lua master gui
 ```
 
 Documentation is provided in the file `docs.md`, though it is currently incomplete. See `demo.lua` for a usage example. Or look at [inv.lua](https://github.com/knector01/inv.lua) to see it used in an actual program.
