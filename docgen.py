@@ -128,7 +128,7 @@ class LuaMethod(LuaMember):
 
     def get_heading(self):
         x = [self.parent_class.name]
-        if self.name != "init":
+        if self.name != CTOR:
             x.extend((self.sep,self.name))
         p = ", ".join(self.params)
         x.extend(("(",p,")"))
