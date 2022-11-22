@@ -15,11 +15,11 @@ PARAM = r"[a-zA-Z_,. ]*"
 TABLE = r"{ *}"
 
 PARAM_SEP_RE = re.compile(r" *, *")
-SIMPLE_RE = re.compile(r"local +("+ALPHA+") *= *"+TABLE)
-STATIC_FIELD_RE = re.compile(r"("+ALPHA+")\.("+ALPHA+") *=")
-FIELD_RE = re.compile(r" *self\.("+ALPHA+") *=")
-METHOD_RE = re.compile(r"function +("+ALPHA+")([:.])("+ALPHA+") *\(("+PARAM+")\)")
-SUBCLASS_RE = re.compile(r"local +("+ALPHA+") *= *("+ALPHA+"):subclass")
+SIMPLE_RE = re.compile(r"local +("+ALPHA+r") *= *"+TABLE)
+STATIC_FIELD_RE = re.compile(r"("+ALPHA+r")\.("+ALPHA+r") *=")
+FIELD_RE = re.compile(r" *self\.("+ALPHA+r") *=")
+METHOD_RE = re.compile(r"function +("+ALPHA+r")([:.])("+ALPHA+r") *\(("+PARAM+r")\)")
+SUBCLASS_RE = re.compile(r"local +("+ALPHA+r") *= *("+ALPHA+r"):subclass")
 COMMENT_RE = re.compile(r" *-- *(.*)")
 
 def format_block(block):
