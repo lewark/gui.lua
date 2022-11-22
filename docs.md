@@ -148,7 +148,7 @@ LinearContainer constructor.
 Parameters:
 - root (Root): The root widget
 - axis (LinearAxis): The primary axis of this container (HORIZONAL or VERTICAL).
-- spacing (int): Spacing between contained gui.
+- spacing (int): Spacing between contained widgets.
 - padding (int): Padding between the first/last widgets and the container's edge.
 
 ### LinearContainer:addChild(child, fillPrimary, fillSecondary, align)
@@ -500,6 +500,6 @@ Event handler called when the widget enters or leaves focus.
 
 Handles any input events recieved by the widget and passes them to
 the appropriate handler functions. Return true from an event handler
-to consume the event and prevent it from being passed on to other gui.
+to consume the event and prevent it from being passed on to other widgets.
 Event consumption is mainly useful for mouse_click and mouse_scroll.
 
