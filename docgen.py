@@ -5,10 +5,10 @@ import os
 
 # TODO: Add dynamic links in text
 # TODO: Grab types from expect calls
-# TODO: Sort methods
 
 SHOW_UNDOC_OVERRIDES = False
-ALWAYS_SHOW = ["init"]
+CTOR = "init"
+CATEGORIES = ["Fields","Methods"]
 
 ALPHA = "[a-zA-Z_]+"
 TABLE = "{ *}"
@@ -69,9 +69,10 @@ class LuaMember(LuaConstruct):
         super().__init__(doc, name, description)
         self.parent_class = parent_class
         self.level = 4
-        self.category = "Fields"
+        self.category = 0
+        if self.parent_class:
+            self.parent_class.members.append(self)
 
-    # TODO: redundant code
     def get_parent_definition(self):
         c = self.doc.get_class(self.parent_class.super_name)
         while c:
@@ -94,21 +95,36 @@ class LuaMember(LuaConstruct):
 
     def write(self, stream):
         if (not SHOW_UNDOC_OVERRIDES
-            and self.name not in ALWAYS_SHOW
+            and self.name != CTOR
             and not self.description
             and self.get_parent_definition()):
             return
         if self.parent_class.category != self.category:
             self.parent_class.category = self.category
-            stream.write("### " + self.category + "\n\n")
+            stream.write("### " + CATEGORIES[self.category] + "\n\n")
         super().write(stream)
+
+    def __lt__(self, m):
+        if self.category < m.category:
+            return True
+        if m.category < self.category:
+            return False
+
+        if self.name == CTOR:
+            return True
+        if m.name == CTOR:
+            return False
+
+        if self.name < m.name:
+            return True
+        return False
 
 class LuaMethod(LuaMember):
     def __init__(self, doc, name, description, parent_class, params, sep):
         super().__init__(doc, name, description, parent_class)
         self.params = params
         self.sep = sep
-        self.category = "Methods"
+        self.category = 1
 
     def get_heading(self):
         x = [self.parent_class.name]
@@ -124,6 +140,7 @@ class LuaClass(LuaConstruct):
         self.members = []
         self.super_name = super_name
         self.category = None
+        doc.classes[name] = self
 
     def write_hierarchy(self, stream):
         stream.write("Inheritance: ");
@@ -141,6 +158,7 @@ class LuaClass(LuaConstruct):
             self.write_hierarchy(stream)
         self.write_description(stream)
         category = None
+        self.members.sort()
         for m in self.members:
             m.write(stream)
 
@@ -168,27 +186,23 @@ class Document:
             elif match := SIMPLE_RE.match(line):
                 class_name = match.group(1)
                 c = LuaClass(self, class_name, format_block(block), None)
-                self.classes[class_name] = c
                 block.clear()
             elif match := STATIC_FIELD_RE.match(line):
                 class_name = match.group(1)
                 field_name = match.group(2)
                 c = self.classes[class_name]
                 f = LuaMember(self, field_name, format_block(block), c)
-                c.members.append(f)
                 block.clear()
             elif match := FIELD_RE.match(line):
                 field_name = match.group(1)
                 c = last_method.parent_class
                 if not get_by_name(field_name, c.members):
                     f = LuaMember(self, field_name, format_block(block), c)
-                    c.members.insert(c.members.index(last_method), f)
                     block.clear()
             elif match := SUBCLASS_RE.match(line):
                 class_name = match.group(1)
                 super_name = match.group(2)
                 c = LuaClass(self, class_name, format_block(block), super_name)
-                self.classes[class_name] = c
                 block.clear()
             elif match := METHOD_RE.match(line):
                 class_name = match.group(1)
@@ -197,7 +211,6 @@ class Document:
                 params = PARAM_SEP_RE.split(match.group(4))
                 c = self.classes[class_name]
                 last_method = LuaMethod(self, name, format_block(block), c, params, sep)
-                c.members.append(last_method)
                 block.clear()
             else:
                 block.clear()

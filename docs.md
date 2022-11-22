@@ -25,19 +25,19 @@ Can be clicked using the mouse, triggering a custom onPressed() callback.
 
 ### Fields
 
-#### Button.text
-
 #### Button.color
-
-#### Button.pushedColor
-
-#### Button.textColor
 
 #### Button.disabledColor
 
+#### Button.enabled
+
 #### Button.held
 
-#### Button.enabled
+#### Button.pushedColor
+
+#### Button.text
+
+#### Button.textColor
 
 ### Methods
 
@@ -58,15 +58,23 @@ Override this method on a Button instance to set its behavior.
 
 ### Fields
 
-#### Constants.TOP_EVENTS
-
-List of events that should only be passed to the topmost widget directly
-under the mouse cursor (clicking, scrolling)
-
 #### Constants.FOCUS_EVENTS
 
 List of events that should be passed to the currently focused widget
 (e.g. keyboard events)
+
+#### Constants.LinearAlign
+
+Enum used to specify layouts within LinearContainers.
+- LinearAxis.CENTER: center the widget within its cell
+- LinearAxis.START: align the widget to the top (HORIZONTAL container) or left (VERTICAL) of its cell
+- LinearAxis.END: align the widget to the bottom (HORIZONTAL container) or right (VERTICAL) of its cell
+
+#### Constants.LinearAxis
+
+Enum used to specify layouts within LinearContainers.
+- LinearAxis.HORIZONTAL: X axis
+- LinearAxis.VERTICAL: Y axis
 
 #### Constants.SpecialChars
 
@@ -75,18 +83,10 @@ Various special characters provided by ComputerCraft:
 MINIMIZE, MAXIMIZE, STRIPES, TRI_RIGHT, TRI_LEFT, TRI_UP, TRI_DOWN,
 ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, ARROW_LR, ARROW_UD
 
-#### Constants.LinearAxis
+#### Constants.TOP_EVENTS
 
-Enum used to specify layouts within LinearContainers.
-- LinearAxis.HORIZONTAL: X axis
-- LinearAxis.VERTICAL: Y axis
-
-#### Constants.LinearAlign
-
-Enum used to specify layouts within LinearContainers.
-- LinearAxis.CENTER: center the widget within its cell
-- LinearAxis.START: align the widget to the top (HORIZONTAL container) or left (VERTICAL) of its cell
-- LinearAxis.END: align the widget to the bottom (HORIZONTAL container) or right (VERTICAL) of its cell
+List of events that should only be passed to the topmost widget directly
+under the mouse cursor (clicking, scrolling)
 
 ## Container
 
@@ -121,13 +121,13 @@ Displays custom text.
 
 ### Fields
 
-#### Label.text
-
 #### Label.backgroundColor
 
-#### Label.textColor
-
 #### Label.length
+
+#### Label.text
+
+#### Label.textColor
 
 ### Methods
 
@@ -153,9 +153,9 @@ will be evenly distributed between them.
 
 #### LinearContainer.axis
 
-#### LinearContainer.spacing
-
 #### LinearContainer.padding
+
+#### LinearContainer.spacing
 
 ### Methods
 
@@ -191,21 +191,21 @@ widget, and is able to efficiently display large amounts of items.
 
 ### Fields
 
-#### ListBox.items
+#### ListBox.bgColor
 
 #### ListBox.cols
 
+#### ListBox.items
+
 #### ListBox.rows
-
-#### ListBox.bgColor
-
-#### ListBox.textColor
 
 #### ListBox.selBgColor
 
 #### ListBox.selTextColor
 
 #### ListBox.selected
+
+#### ListBox.textColor
 
 ### Methods
 
@@ -219,14 +219,14 @@ Parameters:
 - rows (int): The preferred height of the ListBox
 - items (string[]): Items contained within the ListBox
 
+#### ListBox:mouseSelect(x, y)
+
 #### ListBox:onSelectionChanged()
 
 Event handler called when the selected item is changed.
 Override this method to receive selection events.
 
 #### ListBox:setSelected(n)
-
-#### ListBox:mouseSelect(x, y)
 
 ## Object
 
@@ -248,13 +248,13 @@ method to specify initialization behavior for an Object subclass. An object's
 init() method may call its super class's init() if desired
 (use ClassName.superClass.init(self,...))
 
-#### Object:subclass()
-
-Creates a subclass of an existing class.
-
 #### Object:instanceof(class)
 
 Returns true if the Object is an instance of the provided class or a subclass.
+
+#### Object:subclass()
+
+Creates a subclass of an existing class.
 
 ## Root
 
@@ -264,9 +264,9 @@ The root widget of the user interface. Handles focus, resizing, and other events
 
 ### Fields
 
-#### Root.focus
-
 #### Root.backgroundColor
+
+#### Root.focus
 
 ### Methods
 
@@ -274,13 +274,13 @@ The root widget of the user interface. Handles focus, resizing, and other events
 
 Root constructor.
 
-#### Root:show()
-
-Called internally to render the root's first frame.
-
 #### Root:mainLoop()
 
 Shows the GUI and runs its event loop.
+
+#### Root:show()
+
+Called internally to render the root's first frame.
 
 ## ScrollBar
 
@@ -290,7 +290,13 @@ Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 
 ### Fields
 
-#### ScrollBar.scrollWidget
+#### ScrollBar.barColor
+
+#### ScrollBar.bgColor
+
+#### ScrollBar.bgPressedColor
+
+#### ScrollBar.disabledColor
 
 #### ScrollBar.drag
 
@@ -298,17 +304,11 @@ Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 
 #### ScrollBar.grab
 
-#### ScrollBar.barColor
-
-#### ScrollBar.textColor
-
 #### ScrollBar.pressedColor
 
-#### ScrollBar.disabledColor
+#### ScrollBar.scrollWidget
 
-#### ScrollBar.bgColor
-
-#### ScrollBar.bgPressedColor
+#### ScrollBar.textColor
 
 ### Methods
 
@@ -322,9 +322,9 @@ Parameters:
 
 #### ScrollBar:canScroll()
 
-#### ScrollBar:getBarPos()
-
 #### ScrollBar:getBarHeight()
+
+#### ScrollBar:getBarPos()
 
 ## ScrollWidget
 
@@ -360,21 +360,21 @@ A text area for editing multi-line text. Unfinished.
 
 ### Fields
 
-#### TextArea.text
+#### TextArea.charX
+
+#### TextArea.charY
 
 #### TextArea.color
-
-#### TextArea.textColor
-
-#### TextArea.rows
 
 #### TextArea.cols
 
 #### TextArea.cursorScreenPos
 
-#### TextArea.charX
+#### TextArea.rows
 
-#### TextArea.charY
+#### TextArea.text
+
+#### TextArea.textColor
 
 ### Methods
 
@@ -388,15 +388,15 @@ Parameters:
 - rows (int): The preferred height of the text area
 - text (string): Initial contents of the text area
 
-#### TextArea:setText(text)
-
-Sets the text within the text area.
-
 #### TextArea:getText()
 
 Gets the text within the text area.
 
 #### TextArea:mouseSelect(x, y)
+
+#### TextArea:setText(text)
+
+Sets the text within the text area.
 
 ## TextField
 
@@ -406,21 +406,21 @@ A text field that allows users to type text within it.
 
 ### Fields
 
-#### TextField.text
+#### TextField.char
 
 #### TextField.color
-
-#### TextField.textColor
 
 #### TextField.cursorColor
 
 #### TextField.cursorScreenPos
 
-#### TextField.char
-
 #### TextField.length
 
 #### TextField.scroll
+
+#### TextField.text
+
+#### TextField.textColor
 
 ### Methods
 
@@ -433,6 +433,16 @@ Parameters:
 - length (int): Width of the text field in characters.
 - text (string): Initial contents of the TextField.
 
+#### TextField:getText()
+
+Gets the text within the TextField
+
+#### TextField:isCursorVisible()
+
+#### TextField:mouseSelect(x, y)
+
+#### TextField:moveCursor(newPos)
+
 #### TextField:onChanged()
 
 Event handler called when the text in a TextField is edited.
@@ -442,23 +452,13 @@ Override this method on an instance to set custom behavior.
 
 Sets the text within the TextField
 
-#### TextField:getText()
-
-Gets the text within the TextField
-
-#### TextField:isCursorVisible()
-
-#### TextField:moveCursor(newPos)
-
-#### TextField:mouseSelect(x, y)
-
 ## Utility
 
 ### Methods
 
-#### Utility.startswith(str, substr)
-
 #### Utility.contains(tbl, val)
+
+#### Utility.startswith(str, substr)
 
 ## Widget
 
@@ -468,17 +468,17 @@ Base class for GUI elements.
 
 ### Fields
 
-#### Widget.size
-
-#### Widget.pos
+#### Widget.dirty
 
 #### Widget.layout
 
-#### Widget.dirty
-
 #### Widget.parent
 
+#### Widget.pos
+
 #### Widget.root
+
+#### Widget.size
 
 ### Methods
 
@@ -490,25 +490,28 @@ Widget constructor.
 
 Returns true if the coordinates x, y are within the widget's bounding box.
 
-#### Widget:onRedraw()
+#### Widget:focusPostRender()
 
-Event handler called when the GUI is repainted.
-
-#### Widget:onLayout()
-
-Event handler called when the widget's layout is updated.
+Post-render callback for focused widget. Used to position text field cursor.
 
 #### Widget:getPreferredSize()
 
 Returns the widget's preferred minimum size.
 
-#### Widget:render()
+#### Widget:onCharTyped(chr)
 
-Widget render callbacks. Override these to draw a widget.
+Event handler called when a character is typed and the widget is in focus.
 
-#### Widget:focusPostRender()
+#### Widget:onEvent(evt)
 
-Post-render callback for focused widget. Used to position text field cursor.
+Handles any input events recieved by the widget and passes them to
+the appropriate handler functions. Return true from an event handler
+to consume the event and prevent it from being passed on to other widgets.
+Event consumption is mainly useful for mouse_click and mouse_scroll.
+
+#### Widget:onFocus(focused)
+
+Event handler called when the widget enters or leaves focus.
 
 #### Widget:onKeyDown(key, held)
 
@@ -518,38 +521,35 @@ Event handler called when a key is pressed or held and the widget is in focus.
 
 Event handler called when a key is released and the widget is in focus.
 
-#### Widget:onCharTyped(chr)
+#### Widget:onLayout()
 
-Event handler called when a character is typed and the widget is in focus.
-
-#### Widget:onPaste(text)
-
-Event handler called when text is pasted and the widget is in focus.
+Event handler called when the widget's layout is updated.
 
 #### Widget:onMouseDown(btn, x, y)
 
 Event handler called when a mouse button is released and the widget is in focus.
 
-#### Widget:onMouseUp(btn, x, y)
+#### Widget:onMouseDrag(btn, x, y)
 
-Event handler called when a mouse button is pressed over the widget.
+Event handler called when the widget is dragged.
 
 #### Widget:onMouseScroll(dir, x, y)
 
 Event handler called when the mouse wheel is scrolled over the widget.
 
-#### Widget:onMouseDrag(btn, x, y)
+#### Widget:onMouseUp(btn, x, y)
 
-Event handler called when the widget is dragged.
+Event handler called when a mouse button is pressed over the widget.
 
-#### Widget:onFocus(focused)
+#### Widget:onPaste(text)
 
-Event handler called when the widget enters or leaves focus.
+Event handler called when text is pasted and the widget is in focus.
 
-#### Widget:onEvent(evt)
+#### Widget:onRedraw()
 
-Handles any input events recieved by the widget and passes them to
-the appropriate handler functions. Return true from an event handler
-to consume the event and prevent it from being passed on to other widgets.
-Event consumption is mainly useful for mouse_click and mouse_scroll.
+Event handler called when the GUI is repainted.
+
+#### Widget:render()
+
+Widget render callbacks. Override these to draw a widget.
 
