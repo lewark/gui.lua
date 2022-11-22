@@ -23,6 +23,8 @@ Inheritance: [Button](#button) > [Widget](#widget) > [Object](#object)
 
 Can be clicked using the mouse, triggering a custom onPressed() callback.
 
+### Fields
+
 #### Button.text
 
 #### Button.color
@@ -37,7 +39,9 @@ Can be clicked using the mouse, triggering a custom onPressed() callback.
 
 #### Button.enabled
 
-### Button(root, text)
+### Methods
+
+#### Button(root, text)
 
 Button constructor.
 
@@ -45,12 +49,14 @@ Parameters:
 - root (Root): The root widget
 - text (string): Text to display on the Button.
 
-### Button:onPressed()
+#### Button:onPressed()
 
 Event handler called when a Button is pressed.
 Override this method on a Button instance to set its behavior.
 
 ## Constants
+
+### Fields
 
 #### Constants.TOP_EVENTS
 
@@ -88,17 +94,21 @@ Inheritance: [Container](#container) > [Widget](#widget) > [Object](#object)
 
 Base class for all widgets that can contain other gui widgets.
 
+### Fields
+
 #### Container.children
 
-### Container(root)
+### Methods
+
+#### Container(root)
 
 Container constructor.
 
-### Container:addChild(child, ...)
+#### Container:addChild(child, ...)
 
 Add a child widget to the Container.
 
-### Container:layoutChildren()
+#### Container:layoutChildren()
 
 Updates the position and size of all widgets within the Container.
 Specialized behavior is provided by subclasses of Container.
@@ -109,6 +119,8 @@ Inheritance: [Label](#label) > [Widget](#widget) > [Object](#object)
 
 Displays custom text.
 
+### Fields
+
 #### Label.text
 
 #### Label.backgroundColor
@@ -117,7 +129,9 @@ Displays custom text.
 
 #### Label.length
 
-### Label(root, text)
+### Methods
+
+#### Label(root, text)
 
 Label constructor.
 
@@ -135,13 +149,17 @@ Child widgets may be set to fill the primary and/or secondary axes of the contai
 If multiple widgets are set to fill the primary axis, then the free space
 will be evenly distributed between them.
 
+### Fields
+
 #### LinearContainer.axis
 
 #### LinearContainer.spacing
 
 #### LinearContainer.padding
 
-### LinearContainer(root, axis, spacing, padding)
+### Methods
+
+#### LinearContainer(root, axis, spacing, padding)
 
 LinearContainer constructor.
 
@@ -151,7 +169,7 @@ Parameters:
 - spacing (int): Spacing between contained widgets.
 - padding (int): Padding between the first/last widgets and the container's edge.
 
-### LinearContainer:addChild(child, fillPrimary, fillSecondary, align)
+#### LinearContainer:addChild(child, fillPrimary, fillSecondary, align)
 
 Adds a widget to the LinearContainer
 
@@ -161,7 +179,7 @@ Parameters:
 - fillSecondary (bool): whether the widget should fill the other axis perpendicular to the primary one
 - align (LinearAlign): whether the widget should be centered, left-aligned, or right-aligned
 
-### LinearContainer:getSecondaryAxis()
+#### LinearContainer:getSecondaryAxis()
 
 ## ListBox
 
@@ -170,6 +188,8 @@ Inheritance: [ListBox](#listbox) > [ScrollWidget](#scrollwidget) > [Widget](#wid
 List box. Allows an array of choices to be displayed, one of which can be
 selected at a time. Can be scrolled using the mouse wheel or a ScrollBar
 widget, and is able to efficiently display large amounts of items.
+
+### Fields
 
 #### ListBox.items
 
@@ -187,7 +207,9 @@ widget, and is able to efficiently display large amounts of items.
 
 #### ListBox.selected
 
-### ListBox(root, cols, rows, items)
+### Methods
+
+#### ListBox(root, cols, rows, items)
 
 ListBox constructor.
 
@@ -197,20 +219,22 @@ Parameters:
 - rows (int): The preferred height of the ListBox
 - items (string[]): Items contained within the ListBox
 
-### ListBox:onSelectionChanged()
+#### ListBox:onSelectionChanged()
 
 Event handler called when the selected item is changed.
 Override this method to receive selection events.
 
-### ListBox:setSelected(n)
+#### ListBox:setSelected(n)
 
-### ListBox:mouseSelect(x, y)
+#### ListBox:mouseSelect(x, y)
 
 ## Object
 
 Implements basic inheritance features.
 
-### Object(...)
+### Methods
+
+#### Object(...)
 
 Object constructor.
 
@@ -224,11 +248,11 @@ method to specify initialization behavior for an Object subclass. An object's
 init() method may call its super class's init() if desired
 (use ClassName.superClass.init(self,...))
 
-### Object:subclass()
+#### Object:subclass()
 
 Creates a subclass of an existing class.
 
-### Object:instanceof(class)
+#### Object:instanceof(class)
 
 Returns true if the Object is an instance of the provided class or a subclass.
 
@@ -238,19 +262,23 @@ Inheritance: [Root](#root) > [Container](#container) > [Widget](#widget) > [Obje
 
 The root widget of the user interface. Handles focus, resizing, and other events.
 
+### Fields
+
 #### Root.focus
 
 #### Root.backgroundColor
 
-### Root()
+### Methods
+
+#### Root()
 
 Root constructor.
 
-### Root:show()
+#### Root:show()
 
 Called internally to render the root's first frame.
 
-### Root:mainLoop()
+#### Root:mainLoop()
 
 Shows the GUI and runs its event loop.
 
@@ -259,6 +287,8 @@ Shows the GUI and runs its event loop.
 Inheritance: [ScrollBar](#scrollbar) > [Widget](#widget) > [Object](#object)
 
 Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
+
+### Fields
 
 #### ScrollBar.scrollWidget
 
@@ -280,7 +310,9 @@ Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
 
 #### ScrollBar.bgPressedColor
 
-### ScrollBar(root, scrollWidget)
+### Methods
+
+#### ScrollBar(root, scrollWidget)
 
 ScrollBar constructor.
 
@@ -288,11 +320,11 @@ Parameters:
 - root (Root): The root widget
 - scrollWidget (ScrollWidget): The widget this ScrollBar should scroll
 
-### ScrollBar:canScroll()
+#### ScrollBar:canScroll()
 
-### ScrollBar:getBarPos()
+#### ScrollBar:getBarPos()
 
-### ScrollBar:getBarHeight()
+#### ScrollBar:getBarHeight()
 
 ## ScrollWidget
 
@@ -300,27 +332,33 @@ Inheritance: [ScrollWidget](#scrollwidget) > [Widget](#widget) > [Object](#objec
 
 Base class for scrollable widgets
 
+### Fields
+
 #### ScrollWidget.scroll
 
 #### ScrollWidget.scrollSpeed
 
 #### ScrollWidget.scrollbar
 
-### ScrollWidget(root)
+### Methods
+
+#### ScrollWidget(root)
 
 Widget constructor.
 
-### ScrollWidget:getMaxScroll()
+#### ScrollWidget:getMaxScroll()
 
 Returns the scroll range of the widget
 
-### ScrollWidget:setScroll(scroll)
+#### ScrollWidget:setScroll(scroll)
 
 ## TextArea
 
 Inheritance: [TextArea](#textarea) > [Widget](#widget) > [Object](#object)
 
 A text area for editing multi-line text. Unfinished.
+
+### Fields
 
 #### TextArea.text
 
@@ -338,7 +376,9 @@ A text area for editing multi-line text. Unfinished.
 
 #### TextArea.charY
 
-### TextArea(root, cols, rows, text)
+### Methods
+
+#### TextArea(root, cols, rows, text)
 
 TextArea constructor.
 
@@ -348,21 +388,23 @@ Parameters:
 - rows (int): The preferred height of the text area
 - text (string): Initial contents of the text area
 
-### TextArea:setText(text)
+#### TextArea:setText(text)
 
 Sets the text within the text area.
 
-### TextArea:getText()
+#### TextArea:getText()
 
 Gets the text within the text area.
 
-### TextArea:mouseSelect(x, y)
+#### TextArea:mouseSelect(x, y)
 
 ## TextField
 
 Inheritance: [TextField](#textfield) > [Widget](#widget) > [Object](#object)
 
 A text field that allows users to type text within it.
+
+### Fields
 
 #### TextField.text
 
@@ -380,7 +422,9 @@ A text field that allows users to type text within it.
 
 #### TextField.scroll
 
-### TextField(root, length, text)
+### Methods
+
+#### TextField(root, length, text)
 
 TextField constructor.
 
@@ -389,36 +433,40 @@ Parameters:
 - length (int): Width of the text field in characters.
 - text (string): Initial contents of the TextField.
 
-### TextField:onChanged()
+#### TextField:onChanged()
 
 Event handler called when the text in a TextField is edited.
 Override this method on an instance to set custom behavior.
 
-### TextField:setText(text)
+#### TextField:setText(text)
 
 Sets the text within the TextField
 
-### TextField:getText()
+#### TextField:getText()
 
 Gets the text within the TextField
 
-### TextField:isCursorVisible()
+#### TextField:isCursorVisible()
 
-### TextField:moveCursor(newPos)
+#### TextField:moveCursor(newPos)
 
-### TextField:mouseSelect(x, y)
+#### TextField:mouseSelect(x, y)
 
 ## Utility
 
-### Utility.startswith(str, substr)
+### Methods
 
-### Utility.contains(tbl, val)
+#### Utility.startswith(str, substr)
+
+#### Utility.contains(tbl, val)
 
 ## Widget
 
 Inheritance: [Widget](#widget) > [Object](#object)
 
 Base class for GUI elements.
+
+### Fields
 
 #### Widget.size
 
@@ -432,71 +480,73 @@ Base class for GUI elements.
 
 #### Widget.root
 
-### Widget(root)
+### Methods
+
+#### Widget(root)
 
 Widget constructor.
 
-### Widget:containsPoint(x, y)
+#### Widget:containsPoint(x, y)
 
 Returns true if the coordinates x, y are within the widget's bounding box.
 
-### Widget:onRedraw()
+#### Widget:onRedraw()
 
 Event handler called when the GUI is repainted.
 
-### Widget:onLayout()
+#### Widget:onLayout()
 
 Event handler called when the widget's layout is updated.
 
-### Widget:getPreferredSize()
+#### Widget:getPreferredSize()
 
 Returns the widget's preferred minimum size.
 
-### Widget:render()
+#### Widget:render()
 
 Widget render callbacks. Override these to draw a widget.
 
-### Widget:focusPostRender()
+#### Widget:focusPostRender()
 
 Post-render callback for focused widget. Used to position text field cursor.
 
-### Widget:onKeyDown(key, held)
+#### Widget:onKeyDown(key, held)
 
 Event handler called when a key is pressed or held and the widget is in focus.
 
-### Widget:onKeyUp(key)
+#### Widget:onKeyUp(key)
 
 Event handler called when a key is released and the widget is in focus.
 
-### Widget:onCharTyped(chr)
+#### Widget:onCharTyped(chr)
 
 Event handler called when a character is typed and the widget is in focus.
 
-### Widget:onPaste(text)
+#### Widget:onPaste(text)
 
 Event handler called when text is pasted and the widget is in focus.
 
-### Widget:onMouseDown(btn, x, y)
+#### Widget:onMouseDown(btn, x, y)
 
 Event handler called when a mouse button is released and the widget is in focus.
 
-### Widget:onMouseUp(btn, x, y)
+#### Widget:onMouseUp(btn, x, y)
 
 Event handler called when a mouse button is pressed over the widget.
 
-### Widget:onMouseScroll(dir, x, y)
+#### Widget:onMouseScroll(dir, x, y)
 
 Event handler called when the mouse wheel is scrolled over the widget.
 
-### Widget:onMouseDrag(btn, x, y)
+#### Widget:onMouseDrag(btn, x, y)
 
 Event handler called when the widget is dragged.
 
-### Widget:onFocus(focused)
+#### Widget:onFocus(focused)
 
 Event handler called when the widget enters or leaves focus.
 
-### Widget:onEvent(evt)
+#### Widget:onEvent(evt)
 
 Handles any input events recieved by the widget and passes them to
 the appropriate handler functions. Return true from an event handler

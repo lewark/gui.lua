@@ -70,6 +70,7 @@ class LuaMember(LuaConstruct):
         super().__init__(doc, name, description)
         self.parent_class = parent_class
         self.level = 4
+        self.category = "Fields"
 
     # TODO: redundant code
     def get_parent_definition(self):
@@ -98,6 +99,9 @@ class LuaMember(LuaConstruct):
             and not self.description
             and self.get_parent_definition()):
             return
+        if self.parent_class.category != self.category:
+            self.parent_class.category = self.category
+            stream.write("### " + self.category + "\n\n")
         super().write(stream)
 
 class LuaMethod(LuaMember):
@@ -105,7 +109,7 @@ class LuaMethod(LuaMember):
         super().__init__(doc, name, description, parent_class)
         self.params = params
         self.sep = sep
-        self.level = 3
+        self.category = "Methods"
 
     def get_heading(self):
         x = [self.parent_class.name]
@@ -120,6 +124,7 @@ class LuaClass(LuaConstruct):
         super().__init__(doc, name, description)
         self.members = []
         self.super_name = super_name
+        self.category = None
 
     def write_hierarchy(self, stream):
         stream.write("Inheritance: ");
@@ -136,6 +141,7 @@ class LuaClass(LuaConstruct):
         if self.super_name:
             self.write_hierarchy(stream)
         self.write_description(stream)
+        category = None
         for m in self.members:
             m.write(stream)
 
