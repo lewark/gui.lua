@@ -322,6 +322,8 @@ Inheritance: [TextArea](#textarea) > [Widget](#widget) > [Object](#object)
 
 A text area for editing multi-line text. Unfinished.
 
+#### TextArea.text
+
 #### TextArea.color
 
 #### TextArea.textColor
@@ -331,6 +333,10 @@ A text area for editing multi-line text. Unfinished.
 #### TextArea.cols
 
 #### TextArea.cursorScreenPos
+
+#### TextArea.charX
+
+#### TextArea.charY
 
 ### TextArea(root, cols, rows, text)
 
@@ -342,8 +348,6 @@ Parameters:
 - rows (int): The preferred height of the text area
 - text (string): Initial contents of the text area
 
-#### TextArea.text
-
 ### TextArea:setText(text)
 
 Sets the text within the text area.
@@ -351,10 +355,6 @@ Sets the text within the text area.
 ### TextArea:getText()
 
 Gets the text within the text area.
-
-#### TextArea.charY
-
-#### TextArea.charX
 
 ### TextArea:mouseSelect(x, y)
 
