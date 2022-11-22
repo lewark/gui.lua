@@ -5,6 +5,7 @@ import os
 
 # TODO: Add dynamic links in text
 # TODO: Grab types from expect calls
+# TODO: Sort methods
 
 SHOW_UNDOC_OVERRIDES = False
 ALWAYS_SHOW = ["init"]
@@ -15,7 +16,7 @@ TABLE = "{.*}"
 PARAM_RE = re.compile("[, ]+")
 SIMPLE_RE = re.compile("local +("+ALPHA+") += +"+TABLE)
 FIELD_RE = re.compile("("+ALPHA+")\.("+ALPHA+") += +")
-METHOD_RE = re.compile("function +("+ALPHA+"):("+ALPHA+") *\(([a-zA-Z_,. ]*)\)")
+METHOD_RE = re.compile("function +("+ALPHA+")([:.])("+ALPHA+") *\(([a-zA-Z_,. ]*)\)")
 SUBCLASS_RE = re.compile("local +("+ALPHA+") += +("+ALPHA+"):subclass")
 
 FILES = ["gui/"+x+".lua" for x in [
@@ -43,7 +44,8 @@ def get_by_name(name, arr):
             return item
 
 class LuaConstruct:
-    def __init__(self, name, description):
+    def __init__(self, doc, name, description):
+        self.doc = doc
         self.name = name
         self.description = description
         self.level = 2
@@ -77,8 +79,8 @@ class LuaConstruct:
         self.write_description(stream)
 
 class LuaMember(LuaConstruct):
-    def __init__(self, name, description, parent_class):
-        super().__init__(name, description)
+    def __init__(self, doc, name, description, parent_class):
+        super().__init__(doc, name, description)
         self.parent_class = parent_class
         if self.parent_class:
             self.parent_class.members.append(self)
@@ -88,9 +90,10 @@ class LuaMember(LuaConstruct):
         return self.parent_class.name + "." + self.name
 
 class LuaMethod(LuaMember):
-    def __init__(self, name, description, parent_class, params):
-        super().__init__(name, description, parent_class)
+    def __init__(self, doc, name, description, parent_class, params, sep):
+        super().__init__(doc, name, description, parent_class)
         self.params = params
+        self.sep = sep
 
     def get_description(self):
         if self.description:
@@ -100,29 +103,28 @@ class LuaMethod(LuaMember):
             m = get_by_name(self.name,c.members)
             if m and m.description:
                 return m.description
-            c = c.super_class
-    
+            c = self.doc.get_class(c.super_class)
+        return None
+
     def get_heading(self):
         x = [self.parent_class.name]
         if self.name != "init":
-            x.extend((":",self.name))
+            x.extend((self.sep,self.name))
         p = ", ".join(self.params)
         x.extend(("(",p,")"))
         return "".join(x)
 
     def write(self, stream):
-        if not SHOW_UNDOC_OVERRIDES and self.name not in ALWAYS_SHOW and not self.description:
-            c = self.parent_class.super_class
-            found = False
-            while c:
-                if get_by_name(self.name, c.members):
-                    return
-                c = c.super_class
+        if (not SHOW_UNDOC_OVERRIDES
+            and self.name not in ALWAYS_SHOW
+            and not self.description
+            and self.get_description()):
+            return
         super().write(stream)
 
 class LuaClass(LuaConstruct):
-    def __init__(self, name, description, super_class):
-        super().__init__(name, description)
+    def __init__(self, doc, name, description, super_class):
+        super().__init__(doc, name, description)
         self.members = []
         self.super_class = super_class
 
@@ -132,7 +134,7 @@ class LuaClass(LuaConstruct):
         c = self
         while c:
             hierarchy.append(c.get_link())
-            c = c.super_class
+            c = self.doc.get_class(c.super_class)
         stream.write(" > ".join(hierarchy))
         stream.write("\n\n")
 
@@ -147,7 +149,13 @@ class LuaClass(LuaConstruct):
 class Document:
     def __init__(self, name):
         self.name = name
-        self.classes = []
+        self.classes = {}
+        self.keys = None
+
+    def get_class(self, name):
+        if name in self.classes:
+            return self.classes[name]
+        return None
 
     def read_file(self, filename):
         block = []
@@ -160,27 +168,28 @@ class Document:
                 block.append(line[2:].strip())
             elif match := SIMPLE_RE.match(line):
                 class_name = match.group(1)
-                c = LuaClass(class_name, format_block(block), None)
-                self.classes.append(c)
+                c = LuaClass(self, class_name, format_block(block), None)
+                self.classes[class_name] = c
                 block.clear()
             elif match := FIELD_RE.match(line):
                 class_name = match.group(1)
                 field_name = match.group(2)
-                c = get_by_name(class_name, self.classes)
-                f = LuaMember(field_name, format_block(block), c)
+                c = self.classes[class_name]
+                f = LuaMember(self, field_name, format_block(block), c)
                 block.clear()
             elif match := SUBCLASS_RE.match(line):
                 class_name = match.group(1)
                 super_name = match.group(2)
-                c = LuaClass(class_name, format_block(block), get_by_name(super_name, self.classes))
-                self.classes.append(c)
+                c = LuaClass(self, class_name, format_block(block), super_name)
+                self.classes[class_name] = c
                 block.clear()
             elif match := METHOD_RE.match(line):
                 class_name = match.group(1)
-                name = match.group(2)
-                params = PARAM_RE.split(match.group(3))
-                c = get_by_name(class_name, self.classes)
-                m = LuaMethod(name, format_block(block), c, params)
+                sep = match.group(2)
+                name = match.group(3)
+                params = PARAM_RE.split(match.group(4))
+                c = self.classes[class_name]
+                m = LuaMethod(self, name, format_block(block), c, params, sep)
                 block.clear()
             else:
                 block.clear()
@@ -188,14 +197,17 @@ class Document:
 
     def write_contents(self, stream):
         stream.write("## Contents\n\n")
-        for c in self.classes:
+        for key in self.keys:
+            c = self.classes[key]
             stream.write("- " + c.get_link() + "\n")
         stream.write("\n")
 
     def write(self, stream):
+        self.keys = sorted(self.classes.keys())
         stream.write("# " + self.name + "\n\n")
         self.write_contents(stream)
-        for c in self.classes:
+        for key in self.keys:
+            c = self.classes[key]
             c.write(stream)
 
 if __name__ == "__main__":
