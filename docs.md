@@ -23,6 +23,20 @@ Inheritance: [Button](#button) > [Widget](#widget) > [Object](#object)
 
 Can be clicked using the mouse, triggering a custom onPressed() callback.
 
+#### Button.text
+
+#### Button.color
+
+#### Button.pushedColor
+
+#### Button.textColor
+
+#### Button.disabledColor
+
+#### Button.held
+
+#### Button.enabled
+
 ### Button(root, text)
 
 Button constructor.
@@ -38,30 +52,30 @@ Override this method on a Button instance to set its behavior.
 
 ## Constants
 
-### Constants.TOP_EVENTS
+#### Constants.TOP_EVENTS
 
 List of events that should only be passed to the topmost widget directly
 under the mouse cursor (clicking, scrolling)
 
-### Constants.FOCUS_EVENTS
+#### Constants.FOCUS_EVENTS
 
 List of events that should be passed to the currently focused widget
 (e.g. keyboard events)
 
-### Constants.SpecialChars
+#### Constants.SpecialChars
 
 Various special characters provided by ComputerCraft:
 
 MINIMIZE, MAXIMIZE, STRIPES, TRI_RIGHT, TRI_LEFT, TRI_UP, TRI_DOWN,
 ARROW_UP, ARROW_DOWN, ARROW_RIGHT, ARROW_LEFT, ARROW_LR, ARROW_UD
 
-### Constants.LinearAxis
+#### Constants.LinearAxis
 
 Enum used to specify layouts within LinearContainers.
 - LinearAxis.HORIZONTAL: X axis
 - LinearAxis.VERTICAL: Y axis
 
-### Constants.LinearAlign
+#### Constants.LinearAlign
 
 Enum used to specify layouts within LinearContainers.
 - LinearAxis.CENTER: center the widget within its cell
@@ -73,6 +87,8 @@ Enum used to specify layouts within LinearContainers.
 Inheritance: [Container](#container) > [Widget](#widget) > [Object](#object)
 
 Base class for all widgets that can contain other gui widgets.
+
+#### Container.children
 
 ### Container(root)
 
@@ -93,6 +109,14 @@ Inheritance: [Label](#label) > [Widget](#widget) > [Object](#object)
 
 Displays custom text.
 
+#### Label.text
+
+#### Label.backgroundColor
+
+#### Label.textColor
+
+#### Label.length
+
 ### Label(root, text)
 
 Label constructor.
@@ -110,6 +134,12 @@ Padding at the edges and spacing between widgets can be specified.
 Child widgets may be set to fill the primary and/or secondary axes of the container.
 If multiple widgets are set to fill the primary axis, then the free space
 will be evenly distributed between them.
+
+#### LinearContainer.axis
+
+#### LinearContainer.spacing
+
+#### LinearContainer.padding
 
 ### LinearContainer(root, axis, spacing, padding)
 
@@ -140,6 +170,22 @@ Inheritance: [ListBox](#listbox) > [ScrollWidget](#scrollwidget) > [Widget](#wid
 List box. Allows an array of choices to be displayed, one of which can be
 selected at a time. Can be scrolled using the mouse wheel or a ScrollBar
 widget, and is able to efficiently display large amounts of items.
+
+#### ListBox.items
+
+#### ListBox.cols
+
+#### ListBox.rows
+
+#### ListBox.bgColor
+
+#### ListBox.textColor
+
+#### ListBox.selBgColor
+
+#### ListBox.selTextColor
+
+#### ListBox.selected
 
 ### ListBox(root, cols, rows, items)
 
@@ -192,6 +238,10 @@ Inheritance: [Root](#root) > [Container](#container) > [Widget](#widget) > [Obje
 
 The root widget of the user interface. Handles focus, resizing, and other events.
 
+#### Root.focus
+
+#### Root.backgroundColor
+
 ### Root()
 
 Root constructor.
@@ -209,6 +259,26 @@ Shows the GUI and runs its event loop.
 Inheritance: [ScrollBar](#scrollbar) > [Widget](#widget) > [Object](#object)
 
 Scroll bar. Allows greater control over a scrolling widget such as a ListBox.
+
+#### ScrollBar.scrollWidget
+
+#### ScrollBar.drag
+
+#### ScrollBar.dragOffset
+
+#### ScrollBar.grab
+
+#### ScrollBar.barColor
+
+#### ScrollBar.textColor
+
+#### ScrollBar.pressedColor
+
+#### ScrollBar.disabledColor
+
+#### ScrollBar.bgColor
+
+#### ScrollBar.bgPressedColor
 
 ### ScrollBar(root, scrollWidget)
 
@@ -230,6 +300,12 @@ Inheritance: [ScrollWidget](#scrollwidget) > [Widget](#widget) > [Object](#objec
 
 Base class for scrollable widgets
 
+#### ScrollWidget.scroll
+
+#### ScrollWidget.scrollSpeed
+
+#### ScrollWidget.scrollbar
+
 ### ScrollWidget(root)
 
 Widget constructor.
@@ -246,6 +322,16 @@ Inheritance: [TextArea](#textarea) > [Widget](#widget) > [Object](#object)
 
 A text area for editing multi-line text. Unfinished.
 
+#### TextArea.color
+
+#### TextArea.textColor
+
+#### TextArea.rows
+
+#### TextArea.cols
+
+#### TextArea.cursorScreenPos
+
 ### TextArea(root, cols, rows, text)
 
 TextArea constructor.
@@ -256,6 +342,8 @@ Parameters:
 - rows (int): The preferred height of the text area
 - text (string): Initial contents of the text area
 
+#### TextArea.text
+
 ### TextArea:setText(text)
 
 Sets the text within the text area.
@@ -264,6 +352,10 @@ Sets the text within the text area.
 
 Gets the text within the text area.
 
+#### TextArea.charY
+
+#### TextArea.charX
+
 ### TextArea:mouseSelect(x, y)
 
 ## TextField
@@ -271,6 +363,22 @@ Gets the text within the text area.
 Inheritance: [TextField](#textfield) > [Widget](#widget) > [Object](#object)
 
 A text field that allows users to type text within it.
+
+#### TextField.text
+
+#### TextField.color
+
+#### TextField.textColor
+
+#### TextField.cursorColor
+
+#### TextField.cursorScreenPos
+
+#### TextField.char
+
+#### TextField.length
+
+#### TextField.scroll
 
 ### TextField(root, length, text)
 
@@ -311,6 +419,18 @@ Gets the text within the TextField
 Inheritance: [Widget](#widget) > [Object](#object)
 
 Base class for GUI elements.
+
+#### Widget.size
+
+#### Widget.pos
+
+#### Widget.layout
+
+#### Widget.dirty
+
+#### Widget.parent
+
+#### Widget.root
 
 ### Widget(root)
 

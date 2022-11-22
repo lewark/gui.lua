@@ -12,13 +12,15 @@ SHOW_UNDOC_OVERRIDES = False
 ALWAYS_SHOW = ["init"]
 
 ALPHA = "[a-zA-Z_]+"
-TABLE = "{.*}"
+TABLE = "{ *}"
 
 PARAM_SEP_RE = re.compile(" *, *")
-SIMPLE_RE = re.compile("local +("+ALPHA+") += +"+TABLE)
-FIELD_RE = re.compile("("+ALPHA+")\.("+ALPHA+") += +")
+SIMPLE_RE = re.compile("local +("+ALPHA+") *= *"+TABLE)
+STATIC_FIELD_RE = re.compile("("+ALPHA+")\.("+ALPHA+") *=")
+FIELD_RE = re.compile(" *self\.("+ALPHA+") *=")
 METHOD_RE = re.compile("function +("+ALPHA+")([:.])("+ALPHA+") *\(([a-zA-Z_,. ]*)\)")
 SUBCLASS_RE = re.compile("local +("+ALPHA+") += +("+ALPHA+"):subclass")
+COMMENT_RE = re.compile(" *-- *(.*)")
 
 def format_block(block):
     return "\n".join(block)
@@ -67,29 +69,43 @@ class LuaMember(LuaConstruct):
     def __init__(self, doc, name, description, parent_class):
         super().__init__(doc, name, description)
         self.parent_class = parent_class
-        if self.parent_class:
-            self.parent_class.members.append(self)
-        self.level = 3
+        self.level = 4
+
+    # TODO: redundant code
+    def get_parent_definition(self):
+        c = self.doc.get_class(self.parent_class.super_name)
+        while c:
+            m = get_by_name(self.name,c.members)
+            if m:
+                return m
+            c = self.doc.get_class(c.super_name)
+        return None
+
+    def get_description(self):
+        x = self
+        while x:
+            if x.description:
+                return x.description
+            x = x.get_parent_definition()
+        return None
 
     def get_heading(self):
         return self.parent_class.name + "." + self.name
+
+    def write(self, stream):
+        if (not SHOW_UNDOC_OVERRIDES
+            and self.name not in ALWAYS_SHOW
+            and not self.description
+            and self.get_parent_definition()):
+            return
+        super().write(stream)
 
 class LuaMethod(LuaMember):
     def __init__(self, doc, name, description, parent_class, params, sep):
         super().__init__(doc, name, description, parent_class)
         self.params = params
         self.sep = sep
-
-    def get_description(self):
-        if self.description:
-            return self.description
-        c = self.parent_class
-        while c:
-            m = get_by_name(self.name,c.members)
-            if m and m.description:
-                return m.description
-            c = self.doc.get_class(c.super_class)
-        return None
+        self.level = 3
 
     def get_heading(self):
         x = [self.parent_class.name]
@@ -99,19 +115,11 @@ class LuaMethod(LuaMember):
         x.extend(("(",p,")"))
         return "".join(x)
 
-    def write(self, stream):
-        if (not SHOW_UNDOC_OVERRIDES
-            and self.name not in ALWAYS_SHOW
-            and not self.description
-            and self.get_description()):
-            return
-        super().write(stream)
-
 class LuaClass(LuaConstruct):
-    def __init__(self, doc, name, description, super_class):
+    def __init__(self, doc, name, description, super_name):
         super().__init__(doc, name, description)
         self.members = []
-        self.super_class = super_class
+        self.super_name = super_name
 
     def write_hierarchy(self, stream):
         stream.write("Inheritance: ");
@@ -119,13 +127,13 @@ class LuaClass(LuaConstruct):
         c = self
         while c:
             hierarchy.append(c.get_link())
-            c = self.doc.get_class(c.super_class)
+            c = self.doc.get_class(c.super_name)
         stream.write(" > ".join(hierarchy))
         stream.write("\n\n")
 
     def write(self, stream):
         self.write_heading(stream)
-        if self.super_class:
+        if self.super_name:
             self.write_hierarchy(stream)
         self.write_description(stream)
         for m in self.members:
@@ -145,23 +153,32 @@ class Document:
     def read_file(self, filename):
         block = []
         infile = open(filename, "r", encoding="utf-8")
+        last_method = None
         for line in infile.readlines():
             match = None
             if not line:
                 pass
-            elif line.startswith("--"):
-                block.append(line[2:].strip())
+            elif match := COMMENT_RE.match(line):
+                block.append(match.group(1))
             elif match := SIMPLE_RE.match(line):
                 class_name = match.group(1)
                 c = LuaClass(self, class_name, format_block(block), None)
                 self.classes[class_name] = c
                 block.clear()
-            elif match := FIELD_RE.match(line):
+            elif match := STATIC_FIELD_RE.match(line):
                 class_name = match.group(1)
                 field_name = match.group(2)
                 c = self.classes[class_name]
                 f = LuaMember(self, field_name, format_block(block), c)
+                c.members.append(f)
                 block.clear()
+            elif match := FIELD_RE.match(line):
+                field_name = match.group(1)
+                c = last_method.parent_class
+                if not get_by_name(field_name, c.members):
+                    f = LuaMember(self, field_name, format_block(block), c)
+                    c.members.insert(c.members.index(last_method), f)
+                    block.clear()
             elif match := SUBCLASS_RE.match(line):
                 class_name = match.group(1)
                 super_name = match.group(2)
@@ -174,7 +191,8 @@ class Document:
                 name = match.group(3)
                 params = PARAM_SEP_RE.split(match.group(4))
                 c = self.classes[class_name]
-                m = LuaMethod(self, name, format_block(block), c, params, sep)
+                last_method = LuaMethod(self, name, format_block(block), c, params, sep)
+                c.members.append(last_method)
                 block.clear()
             else:
                 block.clear()
