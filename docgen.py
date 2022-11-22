@@ -42,7 +42,7 @@ class LuaConstruct:
 
     def get_link_target(self):
         x = self.get_heading().lower()
-        for c in ":,()":
+        for c in ".,:()":
             x = x.replace(c,"")
         x = x.replace(" ","-")
         return "#" + x
