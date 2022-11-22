@@ -6,6 +6,7 @@ import os
 # TODO: Add dynamic links in text
 # TODO: Grab types from expect calls
 # TODO: Sort methods
+# TODO: Add fields
 
 SHOW_UNDOC_OVERRIDES = False
 ALWAYS_SHOW = ["init"]
@@ -13,27 +14,11 @@ ALWAYS_SHOW = ["init"]
 ALPHA = "[a-zA-Z_]+"
 TABLE = "{.*}"
 
-PARAM_RE = re.compile("[, ]+")
+PARAM_SEP_RE = re.compile(" *, *")
 SIMPLE_RE = re.compile("local +("+ALPHA+") += +"+TABLE)
 FIELD_RE = re.compile("("+ALPHA+")\.("+ALPHA+") += +")
 METHOD_RE = re.compile("function +("+ALPHA+")([:.])("+ALPHA+") *\(([a-zA-Z_,. ]*)\)")
 SUBCLASS_RE = re.compile("local +("+ALPHA+") += +("+ALPHA+"):subclass")
-
-FILES = ["gui/"+x+".lua" for x in [
-    "Constants",
-    "Object",
-    "Widget",
-    "Container",
-    "Root",
-    "LinearContainer",
-    "Label",
-    "Button",
-    "TextField",
-    "TextArea",
-    "ScrollWidget",
-    "ListBox",
-    "ScrollBar",
-]]
 
 def format_block(block):
     return "\n".join(block)
@@ -187,7 +172,7 @@ class Document:
                 class_name = match.group(1)
                 sep = match.group(2)
                 name = match.group(3)
-                params = PARAM_RE.split(match.group(4))
+                params = PARAM_SEP_RE.split(match.group(4))
                 c = self.classes[class_name]
                 m = LuaMethod(self, name, format_block(block), c, params, sep)
                 block.clear()
