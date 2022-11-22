@@ -6,7 +6,6 @@ import os
 # TODO: Add dynamic links in text
 # TODO: Grab types from expect calls
 # TODO: Sort methods
-# TODO: Add fields
 
 SHOW_UNDOC_OVERRIDES = False
 ALWAYS_SHOW = ["init"]
