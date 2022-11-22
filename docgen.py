@@ -200,14 +200,20 @@ class Document:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate Markdown documentation for Lua modules")
-    parser.add_argument('files', metavar='FILE', nargs="+", help="Lua files to read from")
-    parser.add_argument('--out', metavar='OUT_FILE', help="File to write Markdown output into")
-    parser.add_argument('--title', metavar='TITLE', help="Title of the documentation file", default=os.path.basename(os.getcwd()))
+    parser.add_argument('directory', metavar='DIR', help="Directory to read from")
+    parser.add_argument('--out', '-o', metavar='OUT_FILE', help="File to write Markdown output into")
+    parser.add_argument('--title', '-t', metavar='TITLE', help="Title of the documentation file")
     args = parser.parse_args()
 
-    doc = Document(args.title)
-    for file in args.files:
-        doc.read_file(os.path.normpath(file))
+    directory = os.path.normpath(args.directory)
+    title = os.path.basename(directory)
+    if args.title:
+        title = args.title
+        
+    doc = Document(title)
+    
+    for file in os.listdir(directory):
+        doc.read_file(os.path.join(directory, file))
 
     out = sys.stdout
     if args.out:
