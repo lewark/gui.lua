@@ -10,16 +10,17 @@ SHOW_UNDOC_OVERRIDES = False
 CTOR = "init"
 CATEGORIES = ["Fields","Methods"]
 
-ALPHA = "[a-zA-Z_]+"
-TABLE = "{ *}"
+ALPHA = r"[a-zA-Z_]+"
+PARAM = r"[a-zA-Z_,. ]*"
+TABLE = r"{ *}"
 
-PARAM_SEP_RE = re.compile(" *, *")
-SIMPLE_RE = re.compile("local +("+ALPHA+") *= *"+TABLE)
-STATIC_FIELD_RE = re.compile("("+ALPHA+")\.("+ALPHA+") *=")
-FIELD_RE = re.compile(" *self\.("+ALPHA+") *=")
-METHOD_RE = re.compile("function +("+ALPHA+")([:.])("+ALPHA+") *\(([a-zA-Z_,. ]*)\)")
-SUBCLASS_RE = re.compile("local +("+ALPHA+") += +("+ALPHA+"):subclass")
-COMMENT_RE = re.compile(" *-- *(.*)")
+PARAM_SEP_RE = re.compile(r" *, *")
+SIMPLE_RE = re.compile(r"local +("+ALPHA+") *= *"+TABLE)
+STATIC_FIELD_RE = re.compile(r"("+ALPHA+")\.("+ALPHA+") *=")
+FIELD_RE = re.compile(r" *self\.("+ALPHA+") *=")
+METHOD_RE = re.compile(r"function +("+ALPHA+")([:.])("+ALPHA+") *\(("+PARAM+")\)")
+SUBCLASS_RE = re.compile(r"local +("+ALPHA+") *= *("+ALPHA+"):subclass")
+COMMENT_RE = re.compile(r" *-- *(.*)")
 
 def format_block(block):
     return "\n".join(block)
