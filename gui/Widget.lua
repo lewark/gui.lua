@@ -1,5 +1,5 @@
 local expect = require "cc.expect"
-local Object = require "gui.Object"
+local Object = require "object.Object"
 
 -- Base class for GUI elements.
 local Widget = Object:subclass()
