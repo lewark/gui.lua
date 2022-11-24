@@ -2,10 +2,12 @@ import sys
 import re
 import argparse
 import os
+import glob
 
 # TODO: Add dynamic links in text
 # TODO: Grab types from expect calls
 
+EXT = "*.lua"
 SHOW_UNDOC_OVERRIDES = False
 CTOR = "init"
 CATEGORIES = ["Fields","Methods"]
@@ -247,8 +249,9 @@ if __name__ == "__main__":
     
     for directory in args.directories:
         path = os.path.normpath(directory)
-        for file in os.listdir(path):
-            doc.read_file(os.path.join(path, file))
+        wildcard = os.path.join(path, EXT)
+        for file in glob.glob(wildcard):
+            doc.read_file(file)
 
     out = sys.stdout
     if args.out:
