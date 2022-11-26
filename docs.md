@@ -139,6 +139,10 @@ Parameters:
 - root (Root): The root widget
 - text (string): Text to display on the Label.
 
+#### Label:padText()
+
+Returns the label's text padded or trimmed to the size of the label.
+
 ## LinearContainer
 
 Inheritance: [LinearContainer](#linearcontainer) > [Container](#container) > [Widget](#widget) > [Object](#object)
