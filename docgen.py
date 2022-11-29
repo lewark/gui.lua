@@ -12,17 +12,17 @@ SHOW_UNDOC_OVERRIDES = False
 CTOR = "init"
 CATEGORIES = ["Fields","Methods"]
 
-ALPHA = r"[a-zA-Z_]+"
-PARAM = r"[a-zA-Z_,. ]*"
-TABLE = r"{ *}"
+ALPHA = r"\w+"
+PARAM = r"[\w\s,.]*"
+TABLE = r"{\s*}"
 
-PARAM_SEP_RE = re.compile(r" *, *")
-SIMPLE_RE = re.compile(r"local +("+ALPHA+r") *= *"+TABLE)
-STATIC_FIELD_RE = re.compile(r"("+ALPHA+r")\.("+ALPHA+r") *=")
-FIELD_RE = re.compile(r" *self\.("+ALPHA+r") *=")
-METHOD_RE = re.compile(r"function +("+ALPHA+r")([:.])("+ALPHA+r") *\(("+PARAM+r")\)")
-SUBCLASS_RE = re.compile(r"local +("+ALPHA+r") *= *("+ALPHA+r"):subclass")
-COMMENT_RE = re.compile(r" *-- *(.*)")
+PARAM_SEP_RE = re.compile(r"\s*,\s*")
+SIMPLE_RE = re.compile(r"local\s+("+ALPHA+r")\s*=\s*"+TABLE)
+STATIC_FIELD_RE = re.compile(r"("+ALPHA+r")\.("+ALPHA+r")\s*=")
+FIELD_RE = re.compile(r"\s*self\.("+ALPHA+r")\s*=")
+METHOD_RE = re.compile(r"function\s+("+ALPHA+r")([:.])("+ALPHA+r")\s*\(("+PARAM+r")\)")
+SUBCLASS_RE = re.compile(r"local\s+("+ALPHA+r")\s*=\s*("+ALPHA+r"):subclass\s*\(\s*\)")
+COMMENT_RE = re.compile(r"\s*--\s*(.*)")
 
 def format_block(block):
     return "\n".join(block)
